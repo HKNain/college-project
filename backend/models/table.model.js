@@ -15,15 +15,11 @@ const tableSchema = new Schema({
     required: true,
     default: "",
   },
-  totalStudents : {
-    type : Number , 
+  totalStudents:{
+    type : Number ,
     required : true ,
-    default : ""
-  },
-  submitted : {
-    type : Number , 
-    default : 0 ,
-  } , 
+    default :0 
+  } ,
   data : [
     {
       rollNo: {
