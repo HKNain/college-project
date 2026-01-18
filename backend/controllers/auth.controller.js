@@ -4,13 +4,11 @@ import User from "../models/user.models.js";
 import { nanoid } from "nanoid";
 
 
-// TODO 1. userName should be checked like is it correct one 
 // TODO 2. token blacklisting kr saare !!  
-// TODO 3. Google Auth  
 // TODO 4. forget Password 
 // TODO 5. rate limit  
 // TODO 6. is_it_Human  
-  
+// TODO 7. chnage in auth section protctRoute adminRinprotect valida
 
 // !Warning :
 // 1. Do every checks for tokens    
@@ -18,24 +16,24 @@ import { nanoid } from "nanoid";
 
 
 // TODO he after again he comes back then he will reach diresctly to that 
-const checkToken = (res,SignupPayload)=>{
-    const decoded = verifyToken(SignupPayload);
-    return decoded ;
-}
-const createSignupLoginToken = (id,res,tokenName)=>{
+// const checkToken = (res,SignupPayload)=>{
+//     const decoded = verifyToken(SignupPayload);
+//     return decoded ;
+// }
+// const createSignupLoginToken = (id,res,tokenName)=>{
 
-    const payload = {
-        userId : id
-    } // payload is send just bcz I need to do then signUpfor Name so to connect with that its is needed 
-    const signUpToken = generateToken(payload)
-    res.cookie(tokenName,signUpToken,{
-        httpOnly : true ,
-        maxAge : 10*60*1000 ,
-        sameSite : 'strict'
-    })
-}
+//     const payload = {
+//         userId : id
+//     } // payload is send just bcz I need to do then signUpfor Name so to connect with that its is needed 
+//     const signUpToken = generateToken(payload)
+//     res.cookie(tokenName,signUpToken,{
+//         httpOnly : true ,
+//         maxAge : 10*60*1000 ,
+//         sameSite : 'strict'
+//     })
+// }
 
-export const handleSignupEmail = async (req, res) => {
+export const handleSignup = async (req, res) => {
     try {
 
 // TODO A mail will be shown that u have created an acc 
@@ -80,8 +78,8 @@ export const handleLogin = async (req, res) => {
                 return res.status(400).json({message : " Please enter valid password ", flag : false })
             }
 
-            generateToken(existingUser>)
-
+            // generateToken(existingUser>)
+            // TODO Add TOken here 
         
 
         return res.status(200).json({ message: "User Login up  successfully" });

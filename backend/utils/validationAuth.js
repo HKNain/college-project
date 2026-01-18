@@ -1,8 +1,9 @@
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const signUpAllowedFieldForEmailValidation = [ "email", "password" ]
-const signUpAllowedFieldForuserNameValidation = [ "userName", "firstName"]
 const loginAllowedField = [ "identifier", "password" ]
+const branchCreateAllowedField = ["year","branch","totalStudents","data"]
+
 
 function removeAllSpaces(str) {
   return str.replace(/\s+/g, "");
@@ -80,3 +81,32 @@ export const loginValidation = async (req, res , next) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const branchCreateValidation = (req , res , next ) => {
+        const missingField = branchCreateAllowedField.find(
+            field => !(field in req.body) || req.body[field] ===undefined
+        )    
+        if (missingField){
+            const missingFieldMessage = missingField.map((field)=>{
+                `${field} is missing `
+            })
+            return res.status(400).json({
+                message : missingFieldMessage ,
+                flag : false 
+            })
+        }
+       
+
+        if ( Object.keys(req.body).length !== branchCreateAllowedField.length){
+            return res.status(400).json({message : {
+                field : "You are not allowed to add multiple fields "
+            } , flag : false} )
+        }
+    
+    if (typeof(year)!==String || typeof(branch)!=String || typeof(totalStudents)!=Number || typeof(data)!=Array   ){
+            return res.status(400).json({message : {
+                field : "Please fill exact values "
+            } , flag : false} )
+    }
+    next()
+}
