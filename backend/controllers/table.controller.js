@@ -1,5 +1,5 @@
 import Table from "../models/table.model.js";
-import User from "../models/user.models.js";
+import User from "../models/user.model.js";
 import nanoId from "nanoid"
 
  
