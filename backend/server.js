@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import connectToDatabase from "./db/dbConnection.js";
 import authRoute from "./routes/auth.routes.js"
-import studentRoute from "./routes/student.routes.js"
+import tableRoute from "./routes/table.route.js"
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -19,7 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 
 app.use("/api/auth",authRoute)
-app.use("/api/student",studentRoute)
+app.use("/api/table",tableRoute)
 
 
 
