@@ -1,6 +1,6 @@
 import { comparePassword, hashPassword } from "../utils/bcrypt.js";
 import { generateToken, verifyToken } from "../utils/jwtToken.js";
-import User from "../models/user.models.js";
+import User from "../models/user.model.js";
 import { nanoid } from "nanoid";
 
 
