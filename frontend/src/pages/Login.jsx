@@ -1,7 +1,50 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import API from "../utils/axios";
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [captcha, setCaptcha] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const response = await API.post("/auth/login", {
+        email,
+        password,
+      });
+
+      if (response.data.flag) {
+        // Get user role from response
+        const userRole = response.data.user?.role || "teacher";
+
+        // Navigate based on role
+        if (userRole === "admin") {
+          navigate("/admin/dashboard");
+        } else if (userRole === "teacher") {
+          navigate("/teacher/dashboard");
+        } else {
+          navigate("/login");
+        }
+      } else {
+        setError(response.data.message || "Login failed");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "An error occurred during login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-blue-700 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-blue-950 shadow-xl rounded-2xl p-8 border border-blue-100">
@@ -10,7 +53,13 @@ const Login = () => {
           <p className="text-sm text-blue-500 mt-2">Sign in to continue</p>
         </div>
 
-        <form className="space-y-4">
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex flex-col gap-2">
             <label
               htmlFor="email"
@@ -22,6 +71,9 @@ const Login = () => {
               id="email"
               type="email"
               placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
               className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-blue-900 placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition"
             />
           </div>
@@ -38,6 +90,9 @@ const Login = () => {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
                 className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 pr-12 text-blue-900 placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition"
               />
               <button
@@ -93,15 +148,18 @@ const Login = () => {
               id="captcha"
               type="text"
               placeholder="Enter captcha"
+              value={captcha}
+              onChange={(e) => setCaptcha(e.target.value)}
               className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-blue-900 placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 focus:ring-offset-white transition"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 focus:ring-offset-white transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign In
+            {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
       </div>
