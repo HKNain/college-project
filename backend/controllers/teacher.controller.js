@@ -1,12 +1,13 @@
-import User from "../models/user.models";
-import sendEmail from "../utils/sendEmail";
+import Table from "../models/table.model.js";
+import User from "../models/user.model.js";
+import sendEmail from "../utils/sendEmail.js";
 
 export const getTeachersList = async (req, res) => {
   try {
-    const teachers = await User.find({role : "teacher"});
+    const teachers = await User.find({ role: "teacher" });
 
-    if(teachers.length == 0){
-        return res.status(404).json({
+    if (teachers.length == 0) {
+      return res.status(404).json({
         message: "No teachers found",
         flag: false,
       });
@@ -28,14 +29,45 @@ export const getTeachersList = async (req, res) => {
 
 export const sendTeacherMail = async (req, res) => {
   try {
-    const { email, name } = req.body;
+    const { email, teacherName, students } = req.body;
+
+    // Generate HTML email with student list
+    const studentList = students
+      .map(
+        (student) =>
+          `<tr>
+          <td style="padding: 8px; border: 1px solid #ddd;">${student.rollNo}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${student.firstName} ${student.lastName}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${student.email}</td>
+        </tr>`,
+      )
+      .join("");
+
+    const htmlContent = `
+      <h2>Hello ${teacherName},</h2>
+      <p>You have been assigned to evaluate the following students:</p>
+      <table style="border-collapse: collapse; width: 100%;">
+        <thead>
+          <tr style="background-color: #f2f2f2;">
+            <th style="padding: 8px; border: 1px solid #ddd;">Roll No</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Name</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${studentList}
+        </tbody>
+      </table>
+      <p>Please login to the dashboard and enter their marks.</p>
+      <p>Best regards,<br>College Management System</p>
+    `;
 
     await sendEmail({
       to: email,
-      subject: "",
-      text: ``,
-      html: ``,
-    })
+      subject: `Student Assignment - ${students.length} Students`,
+      text: `You have been assigned ${students.length} students for evaluation.`,
+      html: htmlContent,
+    });
 
     res.status(200).json({
       success: true,
@@ -48,4 +80,103 @@ export const sendTeacherMail = async (req, res) => {
       flag: false,
     });
   }
-}
+};
+
+export const sendStudentMarks = async (req, res) => {
+  try {
+    const { tableId, studentMarksData } = req.body;
+
+    // Validate input
+    if (!tableId || !studentMarksData || !Array.isArray(studentMarksData)) {
+      return res.status(400).json({
+        message:
+          "Invalid request body. tableId and studentMarksData array required",
+        flag: false,
+      });
+    }
+
+    // Find the table
+    const table = await Table.findOne({ tableId });
+    if (!table) {
+      return res.status(404).json({
+        message: "Table not found",
+        flag: false,
+      });
+    }
+
+    // Update marks for each student
+    let updatedCount = 0;
+    const errors = [];
+
+    for (const marksData of studentMarksData) {
+      const { rollNo, marks, isAbsent } = marksData;
+
+      // Validate marks data
+      if (rollNo === undefined) {
+        errors.push(`Roll number is missing for one student`);
+        continue;
+      }
+
+      if (marks === undefined && isAbsent === undefined) {
+        errors.push(`No marks or absence data for roll number ${rollNo}`);
+        continue;
+      }
+
+      // Validate marks range
+      if (marks !== undefined && (marks < 0 || marks > 100)) {
+        errors.push(
+          `Invalid marks ${marks} for roll number ${rollNo}. Must be between 0-100`,
+        );
+        continue;
+      }
+
+      // Find student in table data
+      const studentIndex = table.data.findIndex((s) => s.rollNo === rollNo);
+      if (studentIndex === -1) {
+        errors.push(`Student with roll number ${rollNo} not found`);
+        continue;
+      }
+
+      // Update student marks
+      if (isAbsent === true) {
+        table.data[studentIndex].isAbsent = true;
+        table.data[studentIndex].marks = 0;
+      } else if (marks !== undefined) {
+        table.data[studentIndex].marks = marks;
+        table.data[studentIndex].isAbsent = false;
+      }
+
+      updatedCount++;
+    }
+
+    // Save updated table
+    await table.save();
+
+    // Check if all students have been marked
+    const allMarked = table.data.every(
+      (student) => student.marks > 0 || student.isAbsent,
+    );
+
+    if (allMarked) {
+      table.isPending = false;
+      await table.save();
+    }
+
+    return res.status(200).json({
+      message: `Successfully updated ${updatedCount} student(s)`,
+      flag: true,
+      data: {
+        totalUpdated: updatedCount,
+        totalRequested: studentMarksData.length,
+        errors: errors.length > 0 ? errors : null,
+        allMarked,
+      },
+    });
+  } catch (error) {
+    console.log("Error in sendStudentMarks", error.message);
+    return res.status(500).json({
+      message: "Internal server error",
+      flag: false,
+    });
+  }
+};
