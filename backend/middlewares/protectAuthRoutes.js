@@ -1,4 +1,4 @@
-import { verifyToken } from "../config/jwtToken.js";
+import { verifyToken } from "../utils/jwtToken.js";
 
 const  protectRoute = async ( req , res , next ) => {
     try {
@@ -21,4 +21,5 @@ const  protectRoute = async ( req , res , next ) => {
 
     }
 }
+
 export default protectRoute

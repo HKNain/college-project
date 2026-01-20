@@ -1,7 +1,6 @@
 import { comparePassword, hashPassword } from "../utils/bcrypt.js";
-import { generateToken, verifyToken } from "../utils/jwtToken.js";
+import { generateToken } from "../utils/jwtToken.js";
 import User from "../models/user.model.js";
-import { nanoid } from "nanoid";
 
 
 // TODO 2. token blacklisting kr saare !!  
@@ -9,34 +8,18 @@ import { nanoid } from "nanoid";
 // TODO 5. rate limit  
 // TODO 6. is_it_Human  
 // TODO 7. chnage in auth section protctRoute adminRinprotect valida
+// TODO Secure tokens and authorization make it comletely secure since handlSignup Can be done  by anyone and also for login too 
 
 // !Warning :
 // 1. Do every checks for tokens    
 
 
 
-// TODO he after again he comes back then he will reach diresctly to that 
-// const checkToken = (res,SignupPayload)=>{
-//     const decoded = verifyToken(SignupPayload);
-//     return decoded ;
-// }
-// const createSignupLoginToken = (id,res,tokenName)=>{
 
-//     const payload = {
-//         userId : id
-//     } // payload is send just bcz I need to do then signUpfor Name so to connect with that its is needed 
-//     const signUpToken = generateToken(payload)
-//     res.cookie(tokenName,signUpToken,{
-//         httpOnly : true ,
-//         maxAge : 10*60*1000 ,
-//         sameSite : 'strict'
-//     })
-// }
 
 export const handleSignup = async (req, res) => {
     try {
 
-// TODO A mail will be shown that u have created an acc 
         const {email, password ,firstName , lastName , role  } = req.body;
 
         const existingUser = await User.findOne({ email });
@@ -51,7 +34,6 @@ export const handleSignup = async (req, res) => {
         await newUser.save();
 
         return res.status(201).json({flag : true });
-
         
     } catch (error) {
         console.log(" error in handleSingupEmail  ", error)
@@ -63,8 +45,7 @@ export const handleSignup = async (req, res) => {
 
 export const handleLogin = async (req, res) => {
     try {
-        // if payload then just login up thats it just login the user ...
-        // TODO see for autoLogin
+        
             const {email , password } = req.body;
             
             let existingUser =""
@@ -78,8 +59,7 @@ export const handleLogin = async (req, res) => {
                 return res.status(400).json({message : " Please enter valid password ", flag : false })
             }
 
-            // generateToken(existingUser>)
-            // TODO Add TOken here 
+            generateToken(existingUser.id)
         
 
         return res.status(200).json({ message: "User Login up  successfully" });
