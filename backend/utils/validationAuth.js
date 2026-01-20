@@ -1,6 +1,6 @@
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const signUpAllowedFieldForEmailValidation = [ "email", "password" ]
+const signUpAllowedFieldValidation = [ "email", "password" ]
 const loginAllowedField = [ "identifier", "password" ]
 const branchCreateAllowedField = ["year","branch","totalStudents","data"]
 
@@ -9,21 +9,37 @@ function removeAllSpaces(str) {
   return str.replace(/\s+/g, "");
 }
 
+function checker (fieldsNameValidationBox , req , res ) {
+    const missingField = fieldsNameValidationBox.find(
+        field => !(field in req.body) || req.body[field] ===undefined
+    )   
+    if (missingField){
+        const missingFieldMessage = missingField.map((field)=>{
+            `${field} is missing `
+        })
+        return res.status(400).json({
+            message : missingFieldMessage ,
+            flag : false 
+        })
+    }
+   
+
+    if ( Object.keys(req.body).length !== fieldsNameValidationBox.length){
+        return res.status(400).json({message : {
+            field : "You are not allowed to add multiple fields "
+        } , flag : false} )
+    } 
+}
+
 
 export const signUpValidation = async (req,res,next) =>{
   try {
         const {  email, password, firstName , lastName , role  } = req.body;
 
-        signUpAllowedFieldForEmailValidation.forEach(field => {
-            if (req.body[field] === undefined ){
-                return res.status(400).json({
-                message: {
-                    field :  `This field ${field} is missing  `
-                },
-                flag : false
-            });
-            }
-        });
+        checker( signUpAllowedFieldValidation, req , res )
+
+
+
         email = email.toLowerCase();
         if (!emailRegex.test(email)) {
             return res.status(400).json({ message: "Email must be a valid email address" ,flag : false});
@@ -56,15 +72,7 @@ export const loginValidation = async (req, res , next) => {
     try {
         const { email, password  } = req.body;
        
-        loginAllowedField.forEach(field => {
-            if (req.body[field] === undefined){
-                return res.status(400).json({
-                message: {
-                    field :  `This field ${field} is missing  `
-                }
-            });
-            }
-        });
+        checker(loginAllowedField , req , res )
         email = email.toLowerCase();
         if (!emailRegex.test(email)) {
             return res.status(400).json({ message: "Email must be a valid email address" ,flag : false});
@@ -83,25 +91,7 @@ export const loginValidation = async (req, res , next) => {
 };
 
 export const branchCreateValidation = (req , res , next ) => {
-        const missingField = branchCreateAllowedField.find(
-            field => !(field in req.body) || req.body[field] ===undefined
-        )    
-        if (missingField){
-            const missingFieldMessage = missingField.map((field)=>{
-                `${field} is missing `
-            })
-            return res.status(400).json({
-                message : missingFieldMessage ,
-                flag : false 
-            })
-        }
-       
-
-        if ( Object.keys(req.body).length !== branchCreateAllowedField.length){
-            return res.status(400).json({message : {
-                field : "You are not allowed to add multiple fields "
-            } , flag : false} )
-        }
+       checker( branchCreateAllowedField,req, res )
     
     if (typeof(year)!==String || typeof(branch)!=String || typeof(totalStudents)!=Number || typeof(data)!=Array   ){
             return res.status(400).json({message : {

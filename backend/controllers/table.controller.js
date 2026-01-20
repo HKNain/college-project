@@ -1,12 +1,12 @@
 import Table from "../models/table.model.js";
-import User from "../models/user.model.js";
-import nanoId from "nanoid"
+// import User from "../models/user.model.js";
+import {nanoid} from "nanoid"
 
  
 
 export const handleCreatedNewTable   = async (req, res) => {
   try {
-    const tableId = nanoId(10);
+    const tableId = nanoid(10);
     const { year , branch , totalStudents , data } = req.body 
     const createNewTable = new Table.create({
       tableId ,
@@ -102,5 +102,6 @@ export const deleteExistingTable = async (req, res) => {
     });
   }
 };
+
 
  
