@@ -1,6 +1,7 @@
 
+import { securityKeyCheck } from "./securityKeyCheckUp.js";
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const signUpAllowedFieldValidation = [ "email", "password" ]
+const signUpAllowedFieldValidation = [ "email", "password","firstName","lastName","role", "securityKey" ]
 const loginAllowedField = [ "identifier", "password" ]
 const branchCreateAllowedField = ["year","branch","totalStudents","data"]
 
@@ -8,6 +9,8 @@ const branchCreateAllowedField = ["year","branch","totalStudents","data"]
 function removeAllSpaces(str) {
   return str.replace(/\s+/g, "");
 }
+// TODO check issues for lastName 
+
 
 function checker (fieldsNameValidationBox , req , res ) {
     const missingField = fieldsNameValidationBox.find(
@@ -34,7 +37,7 @@ function checker (fieldsNameValidationBox , req , res ) {
 
 export const signUpValidation = async (req,res,next) =>{
   try {
-        const {  email, password, firstName , lastName , role  } = req.body;
+        const {  email, password, firstName , lastName , role , securityKey } = req.body;
 
         checker( signUpAllowedFieldValidation, req , res )
 
@@ -58,6 +61,7 @@ export const signUpValidation = async (req,res,next) =>{
         if (role !== "Admin" || role !=="Professor"){
             return res.status(400).json({ message: "Please enter valid role" });
         }
+        securityKeyCheck(securityKey)
         next() ;
         
     } catch (error) {

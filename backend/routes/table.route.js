@@ -1,18 +1,18 @@
 import { Router } from "express";
-import { handleCreatedNewTable, deleteExistingTable, editTable } from "../controllers/table.controller.js";
+import { handleCreatedNewTable, deleteExistingTable, editTable ,getTable  } from "../controllers/table.controller.js";
 import protectRoute from "../middlewares/protectAuthRoutes.js";
+import { adminProtectRoute } from "../middlewares/adminProtectRoute.js";
+
 
 const router = Router();
-// const adminProtectRoute = (req , res , next  )=>{
-
-// }
 
 
 
-router.post("/createTable",protectRoute  , handleCreatedNewTable);
-router.patch("/editTable", protectRoute  ,editTable);
-router.delete("/editDelete", protectRoute  ,deleteExistingTable);
+
+router.post("/createTable",protectRoute  ,adminProtectRoute , handleCreatedNewTable);
+router.patch("/editTable", protectRoute  ,adminProtectRoute,editTable);
+router.delete("/DeleteTable", protectRoute,adminProtectRoute  ,deleteExistingTable);
+router.delete("/getTable", protectRoute,adminProtectRoute  ,getTable);
 
 
-// TODO add here admin can only d this check 
 export default router;

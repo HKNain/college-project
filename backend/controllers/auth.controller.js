@@ -4,7 +4,7 @@ import User from "../models/user.model.js";
 
 
 // TODO 2. token blacklisting kr saare !!  
-// TODO 4. forget Password 
+// TODO 4. forget Password                                                   
 // TODO 5. rate limit  
 // TODO 6. is_it_Human  
 // TODO 7. chnage in auth section protctRoute adminRinprotect valida
@@ -16,11 +16,12 @@ import User from "../models/user.model.js";
 
 
 
-
 export const handleSignup = async (req, res) => {
     try {
 
-        const {email, password ,firstName , lastName , role  } = req.body;
+        const {email, password , securityKey  , lastName , role  } = req.body;
+        
+
 
         const existingUser = await User.findOne({ email });
 
