@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import API from "../utils/axios";
 
 const Login = () => {
@@ -162,6 +162,19 @@ const Login = () => {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        {/* Signup Link */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-blue-400">
+            Don't have an account?{" "}
+            <Link
+              to="/signup"
+              className="text-blue-300 hover:text-blue-200 font-semibold transition"
+            >
+              Create one
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
