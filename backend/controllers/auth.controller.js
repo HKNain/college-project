@@ -19,7 +19,7 @@ import User from "../models/user.model.js";
 export const handleSignup = async (req, res) => {
     try {
 
-        const {email, password ,firstName , securityKey  , lastName , role  } = req.body;
+        const {email, password ,firstName, lastName , role  } = req.body;
         
 
 

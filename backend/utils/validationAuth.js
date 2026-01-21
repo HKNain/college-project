@@ -108,7 +108,7 @@ export const loginValidation = async (req, res , next) => {
 export const branchCreateValidation = (req , res , next ) => {
        checker( branchCreateAllowedField,req, res )
     
-    if (typeof(year)!==String || typeof(branch)!=String || typeof(totalStudents)!=Number || typeof(data)!=Array   ){
+    if ((typeof(year)!==String && year != null) || (typeof(branch)!=String && branch !=null) || (typeof(totalStudents)!=Number && totalStudents!=null) || (typeof(data)!=Array  && data !=[])  ){
             return res.status(400).json({message : {
                 field : "Please fill exact values "
             } , flag : false} )
