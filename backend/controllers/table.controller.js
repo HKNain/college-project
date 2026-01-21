@@ -1,5 +1,4 @@
 import Table from "../models/table.model.js";
-// import User from "../models/user.model.js";
 import {nanoid} from "nanoid"
 
 // ! Warning here are some bugs that is edit and get means u can edit even in development once u save then it cant edit only in Ui means in postMan ya so  
