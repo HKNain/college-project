@@ -4,7 +4,7 @@ import User from "../models/user.model.js";
 
 
 // TODO 2. token blacklisting kr saare !!  
-// TODO 4. forget Password 
+// TODO 4. forget Password                                                   
 // TODO 5. rate limit  
 // TODO 6. is_it_Human  
 // TODO 7. chnage in auth section protctRoute adminRinprotect valida
@@ -16,11 +16,12 @@ import User from "../models/user.model.js";
 
 
 
-
 export const handleSignup = async (req, res) => {
     try {
 
-        const {email, password ,firstName , lastName , role  } = req.body;
+        const {email, password ,firstName , securityKey  , lastName , role  } = req.body;
+        
+
 
         const existingUser = await User.findOne({ email });
 
@@ -59,7 +60,14 @@ export const handleLogin = async (req, res) => {
                 return res.status(400).json({message : " Please enter valid password ", flag : false })
             }
 
-            generateToken(existingUser.id)
+            const token = generateToken(existingUser.id)
+            res.cookie("token", token, {
+                // httpOnly: true,       // JS cannot access cookie
+                // secure: true,         // HTTPS only (true in production)
+                // sameSite: "strict",   // CSRF protection
+                maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+              });
+              
         
 
         return res.status(200).json({ message: "User Login up  successfully" });
