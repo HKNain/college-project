@@ -1,27 +1,29 @@
 
+import { securityKeyCheck } from "./securityKeyCheckUp.js";
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const signUpAllowedFieldValidation = [ "email", "password" ]
-const loginAllowedField = [ "identifier", "password" ]
+const signUpAllowedFieldValidation = [ "email", "password","firstName","lastName","role", "securityKey" ]
+const loginAllowedField = [ "email", "password" , "role"]
 const branchCreateAllowedField = ["year","branch","totalStudents","data"]
 
 
 function removeAllSpaces(str) {
   return str.replace(/\s+/g, "");
 }
+// TODO check issues for lastName 
+
 
 function checker (fieldsNameValidationBox , req , res ) {
-    const missingField = fieldsNameValidationBox.find(
-        field => !(field in req.body) || req.body[field] ===undefined
-    )   
-    if (missingField){
-        const missingFieldMessage = missingField.map((field)=>{
-            `${field} is missing `
-        })
-        return res.status(400).json({
-            message : missingFieldMessage ,
-            flag : false 
-        })
-    }
+    const missingField = fieldsNameValidationBox.map((field)=>{
+       
+        if (!(field in req.body)) {
+            return res.status(400).json({
+                message : `${field} is missing ` ,
+                flag : false 
+            })
+        } 
+    })
+        
+    
    
 
     if ( Object.keys(req.body).length !== fieldsNameValidationBox.length){
@@ -34,17 +36,20 @@ function checker (fieldsNameValidationBox , req , res ) {
 
 export const signUpValidation = async (req,res,next) =>{
   try {
-        const {  email, password, firstName , lastName , role  } = req.body;
+        let {  email, password, firstName , lastName , role , securityKey } = req.body;
 
         checker( signUpAllowedFieldValidation, req , res )
 
 
 
         email = email.toLowerCase();
+        password =removeAllSpaces(password)
+        firstName = firstName.trim()
+        lastName=lastName.trim()
+
         if (!emailRegex.test(email)) {
             return res.status(400).json({ message: "Email must be a valid email address" ,flag : false});
         }
-        password =removeAllSpaces(password)
         if (password.length < 6 || password.length > 30) {
             return res.status(400).json({ message: "Password must be between 6 and 30 characters ",flag : false });
         }
@@ -55,9 +60,16 @@ export const signUpValidation = async (req,res,next) =>{
         if (lastName!==undefined &&(lastName.trim().length ===0 || lastName.trim().length > 30)) {
             return res.status(400).json({ message: "lastName should have charachter between 1 to 30 " });
         }
-        if (role !== "Admin" || role !=="Professor"){
+        if (role !== "Admin" && role !=="Professor"){
             return res.status(400).json({ message: "Please enter valid role" });
         }
+        console.log ( {
+            email , 
+            password ,
+            firstName ,
+            lastName 
+        })
+        securityKeyCheck(securityKey)
         next() ;
         
     } catch (error) {
@@ -70,17 +82,20 @@ export const signUpValidation = async (req,res,next) =>{
 
 export const loginValidation = async (req, res , next) => {
     try {
-        const { email, password  } = req.body;
+        let { email, password ,role } = req.body;
        
         checker(loginAllowedField , req , res )
         email = email.toLowerCase();
+        password = removeAllSpaces(password)
         if (!emailRegex.test(email)) {
             return res.status(400).json({ message: "Email must be a valid email address" ,flag : false});
         }
 
-        password = removeAllSpaces(password)
         if (password.length < 6 || password.length > 30) {
             return res.status(400).json({ message: "Password must be between 6 and 30 characters" });
+        }
+        if (role !== "Admin" && role !=="Professor"){
+            return res.status(400).json({ message: "Please enter valid role" });
         }
         next() ;
         

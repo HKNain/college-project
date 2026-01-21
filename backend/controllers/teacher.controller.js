@@ -31,7 +31,6 @@ export const sendTeacherMail = async (req, res) => {
   try {
     const { email, teacherName, students } = req.body;
 
-    // Generate HTML email with student list
     const studentList = students
       .map(
         (student) =>

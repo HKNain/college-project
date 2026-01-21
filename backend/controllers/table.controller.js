@@ -1,9 +1,8 @@
 import Table from "../models/table.model.js";
-// import User from "../models/user.model.js";
 import {nanoid} from "nanoid"
 
- 
-
+// ! Warning here are some bugs that is edit and get means u can edit even in development once u save then it cant edit only in Ui means in postMan ya so  
+//  ! Some of the chages are also needed to be done 
 export const handleCreatedNewTable   = async (req, res) => {
   try {
     const tableId = nanoid(10);
@@ -19,6 +18,19 @@ export const handleCreatedNewTable   = async (req, res) => {
   } catch (error) {
     console.log("Error in createdNewBranch" , error)
     return res.status(500).json("Internal server error ")
+  }
+}
+export const getTable = async ( req , res ) =>{
+  try{
+    const tableShownToAdmin = await Table.find().select(
+      "tableId year branch totalStudents isPending data.rollNo data.firstName data.lastName data.email"
+    );
+    
+    return res.status(200).json({message : "here is your data " , data : tableShownToAdmin , flag : true })
+
+  }catch(error){
+    console.log ( "Error in getTable ", error ) ;
+    return res.status(500).json({message : " Internal srever error ", flag : false })
   }
 }
 
