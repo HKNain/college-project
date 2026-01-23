@@ -4,7 +4,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const signUpAllowedFieldValidation = [ "email", "password","firstName","lastName","role", "securityKey" ]
 const loginAllowedField = [ "email", "password" , "role"]
 const branchCreateAllowedField = ["year","branch","totalStudents","data"]
-
+const editBranchAllowedField = ["tableId","year","branch","totalStudents","data"]
 
 function removeAllSpaces(str) {
   return str.replace(/\s+/g, "");
@@ -14,6 +14,7 @@ function removeAllSpaces(str) {
 
 function checker (fieldsNameValidationBox , req , res ) {
     const missingField = fieldsNameValidationBox.map((field)=>{
+        console.log ( field )
        
         if (!(field in req.body)) {
             return res.status(400).json({
@@ -25,7 +26,7 @@ function checker (fieldsNameValidationBox , req , res ) {
         
     
    
-
+    console.log (" HELELop " , fieldsNameValidationBox.length , " dekhona ji ", Object.keys(req.body).length)
     if ( Object.keys(req.body).length !== fieldsNameValidationBox.length){
         return res.status(400).json({message : {
             field : "You are not allowed to add multiple fields "
@@ -106,12 +107,24 @@ export const loginValidation = async (req, res , next) => {
 };
 
 export const branchCreateValidation = (req , res , next ) => {
+    const {year ,  branch , totalStudents , data } = req.body 
        checker( branchCreateAllowedField,req, res )
     
-    if ((typeof(year)!==String && year != null) || (typeof(branch)!=String && branch !=null) || (typeof(totalStudents)!=Number && totalStudents!=null) || (typeof(data)!=Array  && data !=[])  ){
+    if ((typeof(year)!=="string" && year != null) || (typeof(branch)!="string" && branch !=null) || (typeof(totalStudents)!="number" && totalStudents!=null) || (typeof(data)!="object"  && data !=[])  ){
             return res.status(400).json({message : {
                 field : "Please fill exact values "
             } , flag : false} )
     }
     next()
+}
+export const editBranchValidation = (req,res,next) =>{
+    const {year ,  branch , totalStudents , data } = req.body 
+    checker( editBranchAllowedField,req, res )
+ 
+ if ((typeof(year)!=="string" && year != null) || (typeof(branch)!="string" && branch !=null) || (typeof(totalStudents)!="number" && totalStudents!=null) || (typeof(data)!="object"  && data !=[])  ){
+         return res.status(400).json({message : {
+             field : "Please fill exact values "
+         } , flag : false} )
+ }
+ next()
 }

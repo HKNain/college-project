@@ -7,7 +7,11 @@ export const handleCreatedNewTable   = async (req, res) => {
   try {
     const tableId = nanoid(10);
     const { year , branch , totalStudents , data } = req.body 
-    const createNewTable = new Table.create({
+    const existingTable = await Table.findOne({branch}) 
+    if ( existingTable ) {
+      return res.status(400).json({message : "This table exist" , flag : false })
+    }
+    const createNewTable = await  Table.create({
       tableId ,
       totalStudents ,
       year , 
@@ -23,7 +27,7 @@ export const handleCreatedNewTable   = async (req, res) => {
 export const getTable = async ( req , res ) =>{
   try{
     const tableShownToAdmin = await Table.find().select(
-      "tableId year branch totalStudents isPending data.rollNo data.firstName data.lastName data.email"
+      "tableId year branch totalStudents isPending data.rollNo data.firstName data.lastName data.email data.techerAssignedEmail"
     );
     
     return res.status(200).json({message : "here is your data " , data : tableShownToAdmin , flag : true })
@@ -87,22 +91,15 @@ export const deleteExistingTable = async (req, res) => {
 
     if (!tableId) {
       return res.status(400).json({
-        message: "rollNo is required",
+        message: "TableId is required",
         flag: false,
       });
     }
-
     const deletedTable = await Table.findOneAndDelete({ tableId });
 
-    if (!deletedTable) {
-      return res.status(404).json({
-        message: "Table not found",
-        flag: false,
-      });
-    }
 
     return res.status(200).json({
-      message: "Student deleted successfully",
+      message: "Table deleted successfully",
       flag: true,
       data: deletedStudent,
     });
