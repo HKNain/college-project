@@ -25,6 +25,7 @@ const tableSchema = new Schema({
       rollNo: {
         type: Number,
         required: true,
+        unique : true ,
       },
       firstName: {
         type: String,
