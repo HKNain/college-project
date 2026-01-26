@@ -71,7 +71,7 @@ export const signUpValidation = async (req, res, next) => {
         .status(400)
         .json({ message: "lastName should have charachter between 1 to 30 " });
     }
-    if (role !== "Admin" && role !== "Professor") {
+    if (role !== "Admin" && role !== "teacher") {
       return res.status(400).json({ message: "Please enter valid role" });
     }
     console.log({
