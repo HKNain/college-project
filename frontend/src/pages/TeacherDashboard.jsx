@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import API from "../utils/axios";
 import academicYears from "../json/academicYears.json";
@@ -14,6 +14,13 @@ const TeacherDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showRecords, setShowRecords] = useState(false);
+  const [teacherEmail, setTeacherEmail] = useState("");
+
+  // Get teacher email from localStorage or auth context
+  useEffect(() => {
+    const email = localStorage.getItem("userEmail");
+    setTeacherEmail(email);
+  }, []);
 
   // Calculate stats
   const submitted = studentRecords.filter(
@@ -32,11 +39,6 @@ const TeacherDashboard = () => {
           ) / studentRecords.filter((s) => !s.isAbsent).length
         ).toFixed(2)
       : 0;
-
-  // Check if all records are complete
-  const isAllComplete = studentRecords.every(
-    (s) => (s.marks > 0 && !s.isAbsent) || s.isAbsent,
-  );
 
   const handleMarksChange = (rollNo, value) => {
     const numValue = parseInt(value) || 0;
@@ -70,11 +72,6 @@ const TeacherDashboard = () => {
     setEditMarks("");
   };
 
-  const handleSave = () => {
-    console.log("Saved records:", studentRecords);
-    // TODO: Call backend API to save records
-  };
-
   const handleShowRecords = async () => {
     setError("");
     setLoading(true);
@@ -83,12 +80,29 @@ const TeacherDashboard = () => {
         setError("Please select academic year and branch");
         return;
       }
+      if (!teacherEmail) {
+        setError("Teacher email not found. Please login again.");
+        return;
+      }
+
       const tableId = `${academicYear} ${branch}`;
       const res = await API.post("/table/getTable", { tableId });
       if (res.data.flag) {
-        const fetched = res.data.data.data || [];
-        setStudentRecords(fetched);
-        setInitialRecords(fetched);
+        // Filter students assigned to logged-in teacher
+        const allStudents = res.data.data.data || [];
+        const assignedStudents = allStudents.filter(
+          (student) => student.techerAssignedEmail === teacherEmail,
+        );
+
+        if (assignedStudents.length === 0) {
+          setError("No students assigned to you in this class");
+          setShowRecords(false);
+          setStudentRecords([]);
+          return;
+        }
+
+        setStudentRecords(assignedStudents);
+        setInitialRecords(assignedStudents);
         setShowRecords(true);
       } else {
         setError(res.data.message || "Failed to fetch records");
@@ -272,7 +286,7 @@ const TeacherDashboard = () => {
             {/* Student Records Section */}
             <div className="bg-white shadow-xl rounded-2xl p-6 md:p-8 border border-blue-100">
               <h2 className="text-2xl font-bold text-blue-700 mb-6">
-                Student Records
+                Your Assigned Students
               </h2>
 
               {/* Table Header */}
@@ -431,12 +445,6 @@ const TeacherDashboard = () => {
               {/* Action Buttons */}
               <div className="flex justify-end gap-4 mt-8">
                 <button
-                  onClick={handleSave}
-                  className="bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                >
-                  Save
-                </button>
-                <button
                   onClick={handleSubmit}
                   disabled={loading || studentRecords.length === 0}
                   className="bg-green-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -444,13 +452,6 @@ const TeacherDashboard = () => {
                   Submit
                 </button>
               </div>
-
-              {!isAllComplete && (
-                <p className="text-red-600 text-sm mt-4">
-                  <i className="fas fa-exclamation-circle mr-2"></i>
-                  Please complete all student records before submitting
-                </p>
-              )}
             </div>
           </>
         )}

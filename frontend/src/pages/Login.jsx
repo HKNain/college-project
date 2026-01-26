@@ -52,8 +52,14 @@ const Login = () => {
       });
 
       if (response.data.flag) {
-        // Get user role from response
         const userRole = response.data.user?.role || "teacher";
+        const userEmail = response.data.user?.email;
+
+        // Store email and role in localStorage
+        if (userEmail) {
+          localStorage.setItem("userEmail", userEmail);
+          localStorage.setItem("userRole", userRole);
+        }
 
         // Navigate based on role
         if (userRole === "Admin") {

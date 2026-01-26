@@ -38,12 +38,10 @@ export const handleSignup = async (req, res) => {
     return res.status(201).json({ flag: true });
   } catch (error) {
     console.log(" error in handleSingupEmail  ", error);
-    return res
-      .status(500)
-      .json({
-        message: "Internal server error  Account Not Created !",
-        flag: false,
-      });
+    return res.status(500).json({
+      message: "Internal server error  Account Not Created !",
+      flag: false,
+    });
   }
 };
 

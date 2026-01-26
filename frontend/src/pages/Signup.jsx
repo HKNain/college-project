@@ -133,7 +133,7 @@ const Signup = () => {
               id="firstName"
               type="text"
               name="firstName"
-              placeholder="John"
+              placeholder="Gourav"
               value={formData.firstName}
               onChange={handleChange}
               required
@@ -154,7 +154,7 @@ const Signup = () => {
               id="lastName"
               type="text"
               name="lastName"
-              placeholder="Doe"
+              placeholder="Jain"
               value={formData.lastName}
               onChange={handleChange}
               maxLength="30"

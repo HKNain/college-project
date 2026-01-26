@@ -8,6 +8,7 @@ import TeacherDashboard from "./pages/TeacherDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import StudentRecords from "./pages/StudentRecords";
 import AssignTeacher from "./pages/AssignTeacher";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () => {
   return (
@@ -17,17 +18,59 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* Admin Routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/new-students" element={<NewStudents />} />
-        <Route path="/admin/new-teacher" element={<NewTeacher />} />
-        <Route path="/admin/assign-teachers" element={<AssignTeacher />} />
+        {/* Admin Only Routes */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/new-students"
+          element={
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <NewStudents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/new-teacher"
+          element={
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <NewTeacher />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/assign-teachers"
+          element={
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <AssignTeacher />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Student Routes */}
-        <Route path="/student/records" element={<StudentRecords />} />
+        {/* Student Records - Accessible by Admin */}
+        <Route
+          path="/student/records"
+          element={
+            <ProtectedRoute allowedRoles={["Admin"]}>
+              <StudentRecords />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Teacher Routes */}
-        <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+        {/* Teacher Only Routes */}
+        <Route
+          path="/teacher/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <TeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Default Route - Redirect to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
