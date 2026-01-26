@@ -1,10 +1,17 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "@fortawesome/fontawesome-free/css/all.min.css";
+import API from "../utils/axios";
+import academicYears from "../json/academicYears.json";
+import branches from "../json/branches.json";
 
 const NewStudents = () => {
+  const navigate = useNavigate();
   const [academicYear, setAcademicYear] = useState("");
   const [branch, setBranch] = useState("");
   const [numberOfStudents, setNumberOfStudents] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [students, setStudents] = useState([
     { rollNo: "", firstName: "", lastName: "", email: "" },
   ]);
@@ -14,7 +21,6 @@ const NewStudents = () => {
     const clampedValue = Math.min(Math.max(value, 0), 60);
     setNumberOfStudents(clampedValue);
 
-    // Generate student fields based on the number
     const newStudents = Array.from({ length: clampedValue }, () => ({
       rollNo: "",
       firstName: "",
@@ -47,13 +53,72 @@ const NewStudents = () => {
     setStudents(updatedStudents);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({
-      academicYear,
-      branch,
-      students,
-    });
+    setError("");
+    setLoading(true);
+
+    // Validation
+    if (!academicYear) {
+      setError("Please select an academic year");
+      setLoading(false);
+      return;
+    }
+
+    if (!branch) {
+      setError("Please select a branch");
+      setLoading(false);
+      return;
+    }
+
+    if (students.length === 0) {
+      setError("Please add at least one student");
+      setLoading(false);
+      return;
+    }
+
+    // Validate all students have required fields
+    const invalidStudent = students.some(
+      (s) => !s.rollNo || !s.firstName || !s.email,
+    );
+    if (invalidStudent) {
+      setError("All students must have Roll No, First Name, and Email");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // const tableId = nanoid(10);
+      const response = await API.post("/table/createTable", {
+        tableId: academicYear + " " + branch,
+        year: academicYear,
+        branch: branch,
+        // totalStudents: students.length,
+        data: students.map((student) => ({
+          ...student,
+          rollNo: student.rollNo,
+          marks: 0,
+          isAbsent: false,
+          techerAssignedEmail: "",
+        })),
+      });
+
+      if (response.data.flag) {
+        setError("");
+        alert("Students added successfully!");
+        navigate("/admin/dashboard");
+      } else {
+        setError(response.data.message || "Failed to add students");
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Error adding students. Please try again.",
+      );
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,6 +127,13 @@ const NewStudents = () => {
         <h1 className="text-3xl font-bold text-blue-700 mb-8 text-center">
           Add New Students
         </h1>
+
+        {error && (
+          <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-700 border border-red-300">
+            <i className="fas fa-exclamation-circle mr-2"></i>
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           {/* Academic Year, Branch, and Number of Students */}
@@ -80,9 +152,11 @@ const NewStudents = () => {
                 className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition"
               >
                 <option value="">Select Academic Year</option>
-                <option value="2024-2025">2024-2025</option>
-                <option value="2025-2026">2025-2026</option>
-                <option value="2026-2027">2026-2027</option>
+                {academicYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -100,10 +174,11 @@ const NewStudents = () => {
                 className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition"
               >
                 <option value="">Select Branch</option>
-                <option value="CSE">Computer Science Engineering</option>
-                <option value="ECE">Electronics and Communication</option>
-                <option value="ME">Mechanical Engineering</option>
-                <option value="CE">Civil Engineering</option>
+                {branches.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -151,7 +226,7 @@ const NewStudents = () => {
                   className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end"
                 >
                   <input
-                    type="number"
+                    type="text"
                     placeholder="Roll No"
                     value={student.rollNo}
                     onChange={(e) =>
@@ -216,12 +291,27 @@ const NewStudents = () => {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={() => navigate("/admin/dashboard")}
+              className="bg-gray-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
-              className="bg-green-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+              disabled={loading}
+              className="bg-green-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Submit
+              {loading ? (
+                <>
+                  <i className="fas fa-spinner fa-spin mr-2"></i>
+                  Submitting...
+                </>
+              ) : (
+                "Submit"
+              )}
             </button>
           </div>
         </form>

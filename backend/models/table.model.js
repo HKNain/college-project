@@ -3,7 +3,6 @@ import { model, Schema } from "mongoose";
 const tableSchema = new Schema({
   tableId : {
     type : String ,
-    required : true ,
     unique : true 
   } ,
   year: {
@@ -15,15 +14,15 @@ const tableSchema = new Schema({
     required: true,
     default: "",
   },
-  totalStudents:{
-    type : Number ,
-    required : true ,
-    default :0 
-  } ,
+  // totalStudents:{
+  //   type : Number ,
+  //   required : true ,
+  //   default :0 
+  // } ,
   data : [
     {
       rollNo: {
-        type: Number,
+        type: String,
         required: true,
         unique : true ,
       },
@@ -59,7 +58,7 @@ const tableSchema = new Schema({
       },
       techerAssignedEmail : {
         type : String , 
-        required : true 
+        default: ""
       }
     } , 
 

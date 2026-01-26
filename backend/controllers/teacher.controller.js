@@ -4,7 +4,9 @@ import sendEmail from "../utils/sendEmail.js";
 
 export const getTeachersList = async (req, res) => {
   try {
-    const teachers = await User.find({ role: "teacher" });
+    const teachers = await User.find({ role: "teacher" }).select(
+      "firstName lastName email",
+    );
 
     if (teachers.length == 0) {
       return res.status(404).json({
@@ -85,16 +87,20 @@ export const sendStudentMarks = async (req, res) => {
   try {
     const { tableId, studentMarksData } = req.body;
 
-    // Validate input
-    if (!tableId || !studentMarksData || !Array.isArray(studentMarksData)) {
+    // Allow single object or array of objects
+    const updates = Array.isArray(studentMarksData)
+      ? studentMarksData
+      : studentMarksData
+        ? [studentMarksData]
+        : [];
+
+    if (!tableId || updates.length === 0) {
       return res.status(400).json({
-        message:
-          "Invalid request body. tableId and studentMarksData array required",
+        message: "Invalid request body. tableId and studentMarksData required",
         flag: false,
       });
     }
 
-    // Find the table
     const table = await Table.findOne({ tableId });
     if (!table) {
       return res.status(404).json({
@@ -103,14 +109,12 @@ export const sendStudentMarks = async (req, res) => {
       });
     }
 
-    // Update marks for each student
     let updatedCount = 0;
     const errors = [];
 
-    for (const marksData of studentMarksData) {
+    for (const marksData of updates) {
       const { rollNo, marks, isAbsent } = marksData;
 
-      // Validate marks data
       if (rollNo === undefined) {
         errors.push(`Roll number is missing for one student`);
         continue;
@@ -121,7 +125,6 @@ export const sendStudentMarks = async (req, res) => {
         continue;
       }
 
-      // Validate marks range
       if (marks !== undefined && (marks < 0 || marks > 100)) {
         errors.push(
           `Invalid marks ${marks} for roll number ${rollNo}. Must be between 0-100`,
@@ -129,14 +132,12 @@ export const sendStudentMarks = async (req, res) => {
         continue;
       }
 
-      // Find student in table data
       const studentIndex = table.data.findIndex((s) => s.rollNo === rollNo);
       if (studentIndex === -1) {
         errors.push(`Student with roll number ${rollNo} not found`);
         continue;
       }
 
-      // Update student marks
       if (isAbsent === true) {
         table.data[studentIndex].isAbsent = true;
         table.data[studentIndex].marks = 0;
@@ -148,10 +149,8 @@ export const sendStudentMarks = async (req, res) => {
       updatedCount++;
     }
 
-    // Save updated table
     await table.save();
 
-    // Check if all students have been marked
     const allMarked = table.data.every(
       (student) => student.marks > 0 || student.isAbsent,
     );
@@ -166,7 +165,7 @@ export const sendStudentMarks = async (req, res) => {
       flag: true,
       data: {
         totalUpdated: updatedCount,
-        totalRequested: studentMarksData.length,
+        totalRequested: updates.length,
         errors: errors.length > 0 ? errors : null,
         allMarked,
       },

@@ -8,7 +8,7 @@ const Signup = () => {
     lastName: "",
     email: "",
     password: "",
-    role: "teacher",
+    securityKey: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -66,20 +66,28 @@ const Signup = () => {
       return;
     }
 
+    if (!formData.securityKey.trim()) {
+      setError("Security key is required");
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await API.post("/auth/signup", {
         firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim() || "",
+        lastName: formData.lastName.trim() || undefined,
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
-        role: formData.role,
-        securityKey: formData.securityKey || "",
+        role: "Admin",
+        securityKey: formData.securityKey,
       });
 
       if (response.data.flag) {
         // Redirect to login page
         navigate("/login", {
-          state: { message: "Account created successfully. Please login." },
+          state: {
+            message: "Admin account created successfully. Please login.",
+          },
         });
       } else {
         setError(response.data.message || "Signup failed");
@@ -98,10 +106,10 @@ const Signup = () => {
       <div className="w-full max-w-md bg-blue-950 shadow-xl rounded-2xl p-8 border border-blue-100">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-semibold text-blue-500">
-            Create Account
+            Create Admin Account
           </h1>
           <p className="text-sm text-blue-500 mt-2">
-            Join our college management system
+            Join our college management system as an administrator
           </p>
         </div>
 
@@ -166,7 +174,7 @@ const Signup = () => {
               id="email"
               type="email"
               name="email"
-              placeholder="you@example.com"
+              placeholder="admin@example.com"
               value={formData.email}
               onChange={handleChange}
               required
@@ -240,44 +248,28 @@ const Signup = () => {
             </p>
           </div>
 
-          {/* Role */}
+          {/* Security Key (Always shown for admin) */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="role" className="text-sm font-medium text-blue-500">
-              Role <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition"
+            <label
+              htmlFor="securityKey"
+              className="text-sm font-medium text-blue-500"
             >
-              <option value="teacher">Teacher</option>
-              <option value="admin">Admin</option>
-            </select>
+              Admin Security Key <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="securityKey"
+              type="password"
+              name="securityKey"
+              placeholder="Enter admin security key"
+              value={formData.securityKey}
+              onChange={handleChange}
+              required
+              className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-blue-900 placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition"
+            />
+            <p className="text-xs text-blue-400">
+              Contact your system administrator for the security key
+            </p>
           </div>
-
-          {/* Security Key (Admin only) */}
-          {formData.role === "admin" && (
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="securityKey"
-                className="text-sm font-medium text-blue-500"
-              >
-                Security Key <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="securityKey"
-                type="password"
-                name="securityKey"
-                placeholder="Enter admin security key"
-                value={formData.securityKey || ""}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-blue-900 placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition"
-              />
-            </div>
-          )}
 
           {/* Submit Button */}
           <button
@@ -288,10 +280,10 @@ const Signup = () => {
             {loading ? (
               <>
                 <i className="fas fa-spinner fa-spin mr-2"></i>
-                Creating Account...
+                Creating Admin Account...
               </>
             ) : (
-              "Create Account"
+              "Create Admin Account"
             )}
           </button>
         </form>

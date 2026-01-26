@@ -1,0 +1,30 @@
+[
+  {
+    "title": "Create Students",
+    "description": "Add new student records to the system",
+    "icon": "fa-user-plus",
+    "color": "blue",
+    "path": "/admin/new-students"
+  },
+  {
+    "title": "Create Teacher",
+    "description": "Register new teachers and staff members",
+    "icon": "fa-chalkboard-user",
+    "color": "purple",
+    "path": "/admin/new-teacher"
+  },
+  {
+    "title": "View Records",
+    "description": "View and manage all student records",
+    "icon": "fa-table",
+    "color": "green",
+    "path": "/student/records"
+  },
+  {
+    "title": "Assign Teachers",
+    "description": "Assign teachers to student groups",
+    "icon": "fa-user-tie",
+    "color": "orange",
+    "path": "/admin/assign-teachers"
+  }
+]

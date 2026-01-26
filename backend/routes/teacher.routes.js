@@ -12,9 +12,9 @@ const router = Router();
 router.get("/getTeachers", getTeachersList);
 
 // Send assignment emails to teachers (admin only)
-router.post("/sendTeachersEmail", protectRoute, sendTeacherMail);
+router.post("/sendTeachersEmail", sendTeacherMail);
 
 // Submit student marks (teacher only)
-router.post("/submitMarks", protectRoute, sendStudentMarks);
+router.post("/submitMarks", sendStudentMarks);
 
 export default router;

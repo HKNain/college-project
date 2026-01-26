@@ -3,9 +3,9 @@ import { loginValidation, signUpValidation, } from "../utils/validationAuth.js";
 import { handleLogin, handleSignup, } from "../controllers/auth.controller.js";
 const router = Router();
 
-router.post("/signup", signUpValidation, handleSignup);
+router.post("/signup", handleSignup);
 // router.patch("/signup/username", signUpValidationForUserName, handleSignupUserName);
-router.post("/login",loginValidation, handleLogin);
+router.post("/login", handleLogin);
 
 
 

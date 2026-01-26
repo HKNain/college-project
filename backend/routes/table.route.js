@@ -10,10 +10,10 @@ const router = Router();
 
 
 
-router.post("/createTable",protectRoute  ,adminProtectRoute ,branchCreateValidation, handleCreatedNewTable);
-router.patch("/editTable", protectRoute  ,adminProtectRoute,editBranchValidation , editTable);
-router.delete("/deleteTable", protectRoute,adminProtectRoute  ,deleteExistingTable);
-router.get("/getTable", protectRoute,adminProtectRoute  ,getTable);
+router.post("/createTable", handleCreatedNewTable);
+router.patch("/editTable", editTable);
+router.delete("/deleteTable",deleteExistingTable);
+router.post("/getTable", getTable);
 
 
 export default router;

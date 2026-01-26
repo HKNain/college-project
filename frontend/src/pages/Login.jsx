@@ -1,20 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API from "../utils/axios";
+import { generateCaptcha, drawCaptcha } from "../utils/captcha";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [captcha, setCaptcha] = useState("");
+  const [captchaInput, setCaptchaInput] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [captcha, setCaptcha] = useState("");
+  const canvasRef = useRef(null);
 
   const navigate = useNavigate();
+
+  // Generate captcha on mount and when refresh button is clicked
+  useEffect(() => {
+    refreshCaptcha();
+  }, []);
+
+  const refreshCaptcha = () => {
+    const newCaptcha = generateCaptcha();
+    setCaptcha(newCaptcha);
+    setCaptchaInput("");
+    setError("");
+
+    // Draw captcha on canvas
+    if (canvasRef.current) {
+      drawCaptcha(canvasRef.current, newCaptcha);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Verify captcha (case-insensitive)
+    if (captchaInput.toUpperCase() !== captcha.toUpperCase()) {
+      setError("Invalid captcha. Please try again.");
+      refreshCaptcha();
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -28,7 +56,7 @@ const Login = () => {
         const userRole = response.data.user?.role || "teacher";
 
         // Navigate based on role
-        if (userRole === "admin") {
+        if (userRole === "Admin") {
           navigate("/admin/dashboard");
         } else if (userRole === "teacher") {
           navigate("/teacher/dashboard");
@@ -60,6 +88,7 @@ const Login = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Email */}
           <div className="flex flex-col gap-2">
             <label
               htmlFor="email"
@@ -78,6 +107,7 @@ const Login = () => {
             />
           </div>
 
+          {/* Password */}
           <div className="flex flex-col gap-2">
             <label
               htmlFor="password"
@@ -137,29 +167,61 @@ const Login = () => {
             </div>
           </div>
 
+          {/* Captcha */}
           <div className="flex flex-col gap-2">
-            <label
-              htmlFor="captcha"
-              className="text-sm font-medium text-blue-500"
-            >
-              Captcha
+            <label className="text-sm font-medium text-blue-500">
+              Security Verification <span className="text-red-500">*</span>
             </label>
+
+            {/* Canvas for Captcha */}
+            <div className="flex gap-2 items-center">
+              <canvas
+                ref={canvasRef}
+                width="300"
+                height="80"
+                className="border-2 border-blue-400 rounded-lg bg-white flex-1"
+                style={{ userSelect: "none", WebkitUserSelect: "none" }}
+              />
+              <button
+                type="button"
+                onClick={refreshCaptcha}
+                title="Refresh captcha"
+                className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-400 flex-shrink-0"
+              >
+                <i className="fas fa-redo"></i>
+              </button>
+            </div>
+
+            {/* Captcha Input */}
             <input
-              id="captcha"
               type="text"
-              placeholder="Enter captcha"
-              value={captcha}
-              onChange={(e) => setCaptcha(e.target.value)}
-              className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-blue-900 placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition"
+              placeholder="Enter the 6 characters above"
+              value={captchaInput}
+              onChange={(e) => setCaptchaInput(e.target.value)}
+              maxLength="6"
+              className="w-full rounded-lg border border-blue-200 bg-white px-4 py-3 text-blue-900 placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-300 transition tracking-widest"
+              onCopy={(e) => e.preventDefault()}
+              onPaste={(e) => e.preventDefault()}
             />
+            <p className="text-xs text-blue-400">
+              Case insensitive. Copying and pasting are disabled.
+            </p>
           </div>
 
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 focus:ring-offset-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 focus:ring-offset-blue-950 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? (
+              <>
+                <i className="fas fa-spinner fa-spin mr-2"></i>
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
 

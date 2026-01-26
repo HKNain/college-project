@@ -1,42 +1,19 @@
 import React, { useState } from "react";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import API from "../utils/axios";
+import academicYears from "../json/academicYears.json";
+import branches from "../json/branches.json";
 
 const TeacherDashboard = () => {
-  // Sample data - replace with actual API call
-  const [studentRecords, setStudentRecords] = useState([
-    {
-      rollNo: 1,
-      firstName: "John",
-      lastName: "Doe",
-      marks: 0,
-      isAbsent: false,
-    },
-    {
-      rollNo: 2,
-      firstName: "Jane",
-      lastName: "Smith",
-      marks: 0,
-      isAbsent: false,
-    },
-    {
-      rollNo: 3,
-      firstName: "Mike",
-      lastName: "Johnson",
-      marks: 0,
-      isAbsent: false,
-    },
-    {
-      rollNo: 4,
-      firstName: "Sarah",
-      lastName: "Williams",
-      marks: 0,
-      isAbsent: false,
-    },
-  ]);
-
+  const [academicYear, setAcademicYear] = useState("");
+  const [branch, setBranch] = useState("");
+  const [studentRecords, setStudentRecords] = useState([]);
+  const [initialRecords, setInitialRecords] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editMarks, setEditMarks] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showRecords, setShowRecords] = useState(false);
 
   // Calculate stats
   const submitted = studentRecords.filter(
@@ -98,31 +75,63 @@ const TeacherDashboard = () => {
     // TODO: Call backend API to save records
   };
 
+  const handleShowRecords = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      if (!academicYear || !branch) {
+        setError("Please select academic year and branch");
+        return;
+      }
+      const tableId = `${academicYear} ${branch}`;
+      const res = await API.post("/table/getTable", { tableId });
+      if (res.data.flag) {
+        const fetched = res.data.data.data || [];
+        setStudentRecords(fetched);
+        setInitialRecords(fetched);
+        setShowRecords(true);
+      } else {
+        setError(res.data.message || "Failed to fetch records");
+        setShowRecords(false);
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Error fetching records. Please try again.",
+      );
+      setShowRecords(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!isAllComplete) {
-      alert("Please complete all student records before submitting");
+    const changedRecords = studentRecords.filter((student) => {
+      const initial = initialRecords.find((s) => s.rollNo === student.rollNo);
+      return (
+        !initial ||
+        initial.marks !== student.marks ||
+        initial.isAbsent !== student.isAbsent
+      );
+    });
+
+    if (changedRecords.length === 0) {
+      alert("No changes to submit");
       return;
     }
 
     try {
-      // Prepare marks data
-      const studentMarksData = studentRecords.map((student) => ({
-        rollNo: student.rollNo,
-        marks: student.marks,
-        isAbsent: student.isAbsent,
-      }));
-
-      // Call backend API
+      const tableId = `${academicYear} ${branch}`;
       const response = await API.post("/teacher/submitMarks", {
-        tableId: "your-table-id", // Pass the actual tableId
-        studentMarksData: studentMarksData,
+        tableId,
+        studentMarksData: changedRecords,
       });
 
       if (response.data.flag) {
         alert("Marks submitted successfully!");
-        console.log("Submitted records:", response.data);
+        setInitialRecords(studentRecords);
       } else {
-        alert("Error submitting marks");
+        alert(response.data.message || "Error submitting marks");
       }
     } catch (error) {
       console.error("Error submitting marks:", error);
@@ -133,247 +142,318 @@ const TeacherDashboard = () => {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-blue-100 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {/* Submitted Box */}
-          <div className="bg-white shadow-lg rounded-xl p-6 border-l-4 border-green-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Submitted</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">
-                  {submitted}
-                </p>
-              </div>
-              <div className="bg-green-100 p-4 rounded-full">
-                <i className="fas fa-check text-green-600 text-2xl"></i>
-              </div>
-            </div>
-          </div>
-
-          {/* Pending Box */}
-          <div className="bg-white shadow-lg rounded-xl p-6 border-l-4 border-yellow-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-3xl font-bold text-yellow-600 mt-2">
-                  {pending}
-                </p>
-              </div>
-              <div className="bg-yellow-100 p-4 rounded-full">
-                <i className="fas fa-clock text-yellow-600 text-2xl"></i>
-              </div>
-            </div>
-          </div>
-
-          {/* Total Box */}
-          <div className="bg-white shadow-lg rounded-xl p-6 border-l-4 border-blue-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-3xl font-bold text-blue-600 mt-2">{total}</p>
-              </div>
-              <div className="bg-blue-100 p-4 rounded-full">
-                <i className="fas fa-users text-blue-600 text-2xl"></i>
-              </div>
-            </div>
-          </div>
-
-          {/* Average Score Box */}
-          <div className="bg-white shadow-lg rounded-xl p-6 border-l-4 border-purple-500">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Avg Score</p>
-                <p className="text-3xl font-bold text-purple-600 mt-2">
-                  {averageScore}
-                </p>
-              </div>
-              <div className="bg-purple-100 p-4 rounded-full">
-                <i className="fas fa-chart-line text-purple-600 text-2xl"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Student Records Section */}
-        <div className="bg-white shadow-xl rounded-2xl p-6 md:p-8 border border-blue-100">
-          <h2 className="text-2xl font-bold text-blue-700 mb-6">
-            Student Records
+        {/* Filters */}
+        <div className="bg-white shadow-xl rounded-2xl p-6 md:p-8 border border-blue-100 mb-6">
+          <h2 className="text-2xl font-bold text-blue-700 mb-4">
+            Select Class
           </h2>
-
-          {/* Table Header */}
-          <div className="hidden md:grid grid-cols-12 gap-4 mb-4 px-4 bg-blue-50 py-3 rounded-lg">
-            <label className="col-span-1 text-sm font-semibold text-blue-700">
-              Roll No
-            </label>
-            <label className="col-span-3 text-sm font-semibold text-blue-700">
-              Name
-            </label>
-            <label className="col-span-2 text-sm font-semibold text-blue-700">
-              Marks
-            </label>
-            <label className="col-span-2 text-sm font-semibold text-blue-700">
-              Absent
-            </label>
-            <label className="col-span-2 text-sm font-semibold text-blue-700">
-              Action
-            </label>
-            <label className="col-span-2"></label>
-          </div>
-
-          {/* Student Rows */}
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-            {studentRecords.map((student) => (
-              <div
-                key={student.rollNo}
-                className={`grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 rounded-lg border ${
-                  student.isAbsent
-                    ? "bg-red-50 border-red-200"
-                    : student.marks > 0
-                      ? "bg-green-50 border-green-200"
-                      : "bg-gray-50 border-gray-200"
-                }`}
+          {error && (
+            <div className="mb-4 p-4 rounded-lg bg-red-100 text-red-700 border border-red-300">
+              <i className="fas fa-exclamation-circle mr-2" />
+              {error}
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-blue-700">
+                Academic Year
+              </label>
+              <select
+                value={academicYear}
+                onChange={(e) => setAcademicYear(e.target.value)}
+                className="w-full rounded-lg border border-blue-200 px-4 py-3"
               >
-                {/* Roll No */}
-                <div className="md:col-span-1 col-span-1">
-                  <label className="md:hidden text-sm font-semibold text-blue-700">
-                    Roll No
-                  </label>
-                  <p className="text-blue-900 font-medium">{student.rollNo}</p>
-                </div>
+                <option value="">Select Academic Year</option>
+                {academicYears.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-blue-700">
+                Branch
+              </label>
+              <select
+                value={branch}
+                onChange={(e) => setBranch(e.target.value)}
+                className="w-full rounded-lg border border-blue-200 px-4 py-3"
+              >
+                <option value="">Select Branch</option>
+                {branches.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col justify-end">
+              <button
+                onClick={handleShowRecords}
+                disabled={loading || !academicYear || !branch}
+                className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg shadow-md disabled:opacity-50"
+              >
+                {loading ? "Loading..." : "Show Students"}
+              </button>
+            </div>
+          </div>
+        </div>
 
-                {/* Name */}
-                <div className="md:col-span-3 col-span-1">
-                  <label className="md:hidden text-sm font-semibold text-blue-700">
-                    Name
-                  </label>
-                  <p className="text-blue-900 font-medium">
-                    {student.firstName} {student.lastName}
-                  </p>
-                </div>
-
-                {/* Marks */}
-                <div className="md:col-span-2 col-span-1">
-                  <label className="md:hidden text-sm font-semibold text-blue-700">
-                    Marks
-                  </label>
-                  {editingId === student.rollNo ? (
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={editMarks}
-                      onChange={(e) => setEditMarks(e.target.value)}
-                      disabled={
-                        studentRecords.find((s) => s.rollNo === student.rollNo)
-                          ?.isAbsent
-                      }
-                      className="w-full rounded-lg border border-blue-300 bg-white px-3 py-2 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
-                  ) : (
-                    <p
-                      className={`text-lg font-semibold ${
-                        student.isAbsent
-                          ? "text-red-600"
-                          : student.marks > 0
-                            ? "text-green-600"
-                            : "text-gray-600"
-                      }`}
-                    >
-                      {student.isAbsent ? "Absent" : student.marks || "-"}
+        {showRecords && (
+          <>
+            {/* Stats Section */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              {/* Submitted Box */}
+              <div className="bg-white shadow-lg rounded-xl p-6 border-l-4 border-green-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">
+                      Submitted
                     </p>
-                  )}
-                </div>
-
-                {/* Is Absent Checkbox */}
-                <div className="md:col-span-2 col-span-1 flex items-center">
-                  <label className="md:hidden text-sm font-semibold text-blue-700 mr-2">
-                    Absent
-                  </label>
-                  <input
-                    type="checkbox"
-                    checked={student.isAbsent}
-                    onChange={(e) =>
-                      handleIsAbsentChange(student.rollNo, e.target.checked)
-                    }
-                    className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-400 cursor-pointer"
-                  />
-                </div>
-
-                {/* Edit Button */}
-                <div className="md:col-span-2 col-span-1">
-                  {editingId === student.rollNo ? (
-                    <button
-                      onClick={handleEditSave}
-                      className="w-full bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                    >
-                      Save
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() =>
-                        handleEditClick(student.rollNo, student.marks)
-                      }
-                      disabled={student.isAbsent}
-                      className="w-full bg-orange-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <i className="fas fa-edit"></i>
-                      Edit
-                    </button>
-                  )}
-                </div>
-
-                {/* Delete/Cancel Button */}
-                <div className="md:col-span-2 col-span-1">
-                  {editingId === student.rollNo ? (
-                    <button
-                      onClick={() => {
-                        setEditingId(null);
-                        setEditMarks("");
-                      }}
-                      className="w-full bg-gray-400 text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
-                    >
-                      Cancel
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() =>
-                        handleMarksChange(student.rollNo, 0) &&
-                        handleIsAbsentChange(student.rollNo, false)
-                      }
-                      className="w-full bg-red-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 transition flex items-center justify-center gap-2"
-                    >
-                      <i className="fas fa-redo"></i>
-                    </button>
-                  )}
+                    <p className="text-3xl font-bold text-green-600 mt-2">
+                      {submitted}
+                    </p>
+                  </div>
+                  <div className="bg-green-100 p-4 rounded-full">
+                    <i className="fas fa-check text-green-600 text-2xl"></i>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 mt-8">
-            <button
-              onClick={handleSave}
-              className="bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-            >
-              Save
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={!isAllComplete}
-              className="bg-green-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Submit
-            </button>
-          </div>
+              {/* Pending Box */}
+              <div className="bg-white shadow-lg rounded-xl p-6 border-l-4 border-yellow-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Pending</p>
+                    <p className="text-3xl font-bold text-yellow-600 mt-2">
+                      {pending}
+                    </p>
+                  </div>
+                  <div className="bg-yellow-100 p-4 rounded-full">
+                    <i className="fas fa-clock text-yellow-600 text-2xl"></i>
+                  </div>
+                </div>
+              </div>
 
-          {!isAllComplete && (
-            <p className="text-red-600 text-sm mt-4">
-              <i className="fas fa-exclamation-circle mr-2"></i>
-              Please complete all student records before submitting
-            </p>
-          )}
-        </div>
+              {/* Total Box */}
+              <div className="bg-white shadow-lg rounded-xl p-6 border-l-4 border-blue-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Total</p>
+                    <p className="text-3xl font-bold text-blue-600 mt-2">
+                      {total}
+                    </p>
+                  </div>
+                  <div className="bg-blue-100 p-4 rounded-full">
+                    <i className="fas fa-users text-blue-600 text-2xl"></i>
+                  </div>
+                </div>
+              </div>
+
+              {/* Average Score Box */}
+              <div className="bg-white shadow-lg rounded-xl p-6 border-l-4 border-purple-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">
+                      Avg Score
+                    </p>
+                    <p className="text-3xl font-bold text-purple-600 mt-2">
+                      {averageScore}
+                    </p>
+                  </div>
+                  <div className="bg-purple-100 p-4 rounded-full">
+                    <i className="fas fa-chart-line text-purple-600 text-2xl"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Student Records Section */}
+            <div className="bg-white shadow-xl rounded-2xl p-6 md:p-8 border border-blue-100">
+              <h2 className="text-2xl font-bold text-blue-700 mb-6">
+                Student Records
+              </h2>
+
+              {/* Table Header */}
+              <div className="hidden md:grid grid-cols-12 gap-4 mb-4 px-4 bg-blue-50 py-3 rounded-lg">
+                <label className="col-span-1 text-sm font-semibold text-blue-700">
+                  Roll No
+                </label>
+                <label className="col-span-3 text-sm font-semibold text-blue-700">
+                  Name
+                </label>
+                <label className="col-span-2 text-sm font-semibold text-blue-700">
+                  Marks
+                </label>
+                <label className="col-span-2 text-sm font-semibold text-blue-700">
+                  Absent
+                </label>
+                <label className="col-span-2 text-sm font-semibold text-blue-700">
+                  Action
+                </label>
+                <label className="col-span-2"></label>
+              </div>
+
+              {/* Student Rows */}
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                {studentRecords.map((student) => (
+                  <div
+                    key={student.rollNo}
+                    className={`grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 rounded-lg border ${
+                      student.isAbsent
+                        ? "bg-red-50 border-red-200"
+                        : student.marks > 0
+                          ? "bg-green-50 border-green-200"
+                          : "bg-gray-50 border-gray-200"
+                    }`}
+                  >
+                    {/* Roll No */}
+                    <div className="md:col-span-1 col-span-1">
+                      <label className="md:hidden text-sm font-semibold text-blue-700">
+                        Roll No
+                      </label>
+                      <p className="text-blue-900 font-medium">
+                        {student.rollNo}
+                      </p>
+                    </div>
+
+                    {/* Name */}
+                    <div className="md:col-span-3 col-span-1">
+                      <label className="md:hidden text-sm font-semibold text-blue-700">
+                        Name
+                      </label>
+                      <p className="text-blue-900 font-medium">
+                        {student.firstName} {student.lastName}
+                      </p>
+                    </div>
+
+                    {/* Marks */}
+                    <div className="md:col-span-2 col-span-1">
+                      <label className="md:hidden text-sm font-semibold text-blue-700">
+                        Marks
+                      </label>
+                      {editingId === student.rollNo ? (
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={editMarks}
+                          onChange={(e) => setEditMarks(e.target.value)}
+                          disabled={
+                            studentRecords.find(
+                              (s) => s.rollNo === student.rollNo,
+                            )?.isAbsent
+                          }
+                          className="w-full rounded-lg border border-blue-300 bg-white px-3 py-2 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                      ) : (
+                        <p
+                          className={`text-lg font-semibold ${
+                            student.isAbsent
+                              ? "text-red-600"
+                              : student.marks > 0
+                                ? "text-green-600"
+                                : "text-gray-600"
+                          }`}
+                        >
+                          {student.isAbsent ? "Absent" : student.marks || "-"}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Is Absent Checkbox */}
+                    <div className="md:col-span-2 col-span-1 flex items-center">
+                      <label className="md:hidden text-sm font-semibold text-blue-700 mr-2">
+                        Absent
+                      </label>
+                      <input
+                        type="checkbox"
+                        checked={student.isAbsent}
+                        onChange={(e) =>
+                          handleIsAbsentChange(student.rollNo, e.target.checked)
+                        }
+                        className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-400 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Edit Button */}
+                    <div className="md:col-span-2 col-span-1">
+                      {editingId === student.rollNo ? (
+                        <button
+                          onClick={handleEditSave}
+                          className="w-full bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                        >
+                          Save
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleEditClick(student.rollNo, student.marks)
+                          }
+                          disabled={student.isAbsent}
+                          className="w-full bg-orange-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <i className="fas fa-edit"></i>
+                          Edit
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Delete/Cancel Button */}
+                    <div className="md:col-span-2 col-span-1">
+                      {editingId === student.rollNo ? (
+                        <button
+                          onClick={() => {
+                            setEditingId(null);
+                            setEditMarks("");
+                          }}
+                          className="w-full bg-gray-400 text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                        >
+                          Cancel
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleMarksChange(student.rollNo, 0) &&
+                            handleIsAbsentChange(student.rollNo, false)
+                          }
+                          className="w-full bg-red-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 transition flex items-center justify-center gap-2"
+                        >
+                          <i className="fas fa-redo"></i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-4 mt-8">
+                <button
+                  onClick={handleSave}
+                  className="bg-blue-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading || studentRecords.length === 0}
+                  className="bg-green-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit
+                </button>
+              </div>
+
+              {!isAllComplete && (
+                <p className="text-red-600 text-sm mt-4">
+                  <i className="fas fa-exclamation-circle mr-2"></i>
+                  Please complete all student records before submitting
+                </p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
