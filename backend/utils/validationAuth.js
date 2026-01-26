@@ -10,7 +10,7 @@ const signUpAllowedFieldValidation = [
 ];
 const loginAllowedField = ["email", "password"];
 const branchCreateAllowedField = ["year", "branch", "data", "tableId"];
-const editBranchAllowedField = ["tableId", "year", "branch", "data"];
+const editBranchAllowedField = ["tableId", "data"];
 
 function removeAllSpaces(str) {
   return str.replace(/\s+/g, "");
@@ -26,12 +26,10 @@ function checker(fieldsNameValidationBox, req, res) {
     }
   }
   if (Object.keys(req.body).length !== fieldsNameValidationBox.length) {
-    return res
-      .status(400)
-      .json({
-        message: { field: "You are not allowed to add multiple fields " },
-        flag: false,
-      });
+    return res.status(400).json({
+      message: { field: "You are not allowed to add multiple fields " },
+      flag: false,
+    });
   }
 }
 
@@ -39,7 +37,34 @@ export const signUpValidation = async (req, res, next) => {
   try {
     let { email, password, firstName, lastName, role, securityKey } = req.body;
 
-    checker(signUpAllowedFieldValidation, req, res);
+    // Adjust allowed fields based on role
+    const allowedFields = [
+      "email",
+      "password",
+      "firstName",
+      "lastName",
+      "role",
+    ];
+    if (role === "Admin") {
+      allowedFields.push("securityKey");
+    }
+
+    // Check for required fields
+    for (const field of allowedFields) {
+      if (!(field in req.body)) {
+        return res
+          .status(400)
+          .json({ message: `${field} is missing`, flag: false });
+      }
+    }
+
+    // Check for extra fields
+    if (Object.keys(req.body).length !== allowedFields.length) {
+      return res.status(400).json({
+        message: "You are not allowed to add extra fields",
+        flag: false,
+      });
+    }
 
     email = email.toLowerCase();
     password = removeAllSpaces(password);
@@ -51,36 +76,47 @@ export const signUpValidation = async (req, res, next) => {
         .status(400)
         .json({ message: "Email must be a valid email address", flag: false });
     }
+
     if (password.length < 6 || password.length > 30) {
       return res.status(400).json({
-        message: "Password must be between 6 and 30 characters ",
+        message: "Password must be between 6 and 30 characters",
         flag: false,
       });
     }
 
-    if (firstName.trim().length == 0 || firstName.trim().length > 30) {
-      return res
-        .status(400)
-        .json({ message: "FirstName should have charachter between 1 to 30 " });
+    if (firstName.trim().length === 0 || firstName.trim().length > 30) {
+      return res.status(400).json({
+        message: "First name should have characters between 1 to 30",
+        flag: false,
+      });
     }
+
     if (
-      lastName !== undefined &&
+      lastName &&
       (lastName.trim().length === 0 || lastName.trim().length > 30)
     ) {
+      return res.status(400).json({
+        message: "Last name should have characters between 1 to 30",
+        flag: false,
+      });
+    }
+
+    if (role !== "Admin" && role !== "teacher") {
       return res
         .status(400)
-        .json({ message: "lastName should have charachter between 1 to 30 " });
+        .json({ message: "Please enter valid role", flag: false });
     }
-    if (role !== "Admin" && role !== "teacher") {
-      return res.status(400).json({ message: "Please enter valid role" });
+
+    // Validate security key only for Admin role
+    if (role === "Admin") {
+      if (!securityKeyCheck(securityKey)) {
+        return res.status(400).json({
+          message: "Invalid security key. Must be 6-10 characters",
+          flag: false,
+        });
+      }
     }
-    console.log({
-      email,
-      password,
-      firstName,
-      lastName,
-    });
-    securityKeyCheck(securityKey);
+
     next();
   } catch (error) {
     console.error("SignupValidation error:", error);
@@ -136,13 +172,10 @@ export const branchCreateValidation = (req, res, next) => {
   next();
 };
 export const editBranchValidation = (req, res, next) => {
-  const { year, branch, totalStudents, data } = req.body;
+  const { data, tableId } = req.body;
   checker(editBranchAllowedField, req, res);
-
   if (
-    (typeof year !== "string" && year != null) ||
-    (typeof branch != "string" && branch != null) ||
-    (typeof totalStudents != "number" && totalStudents != null) ||
+    (typeof tableId != "string" && tableId != null) ||
     (typeof data != "object" && data != [])
   ) {
     return res.status(400).json({

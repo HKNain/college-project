@@ -5,16 +5,14 @@ import {
   sendTeacherMail,
 } from "../controllers/teacher.controller.js";
 import protectRoute from "../middlewares/protectAuthRoutes.js";
+import { adminProtectRoute } from "../middlewares/adminProtectRoute.js";
 
 const router = Router();
 
-// Get all teachers (can be public or protected based on your needs)
-router.get("/getTeachers", getTeachersList);
+router.get("/getTeachers", protectRoute, getTeachersList);
 
-// Send assignment emails to teachers (admin only)
-router.post("/sendTeachersEmail", sendTeacherMail);
+router.post("/sendTeachersEmail",protectRoute, adminProtectRoute,  sendTeacherMail);
 
-// Submit student marks (teacher only)
-router.post("/submitMarks", sendStudentMarks);
+router.post("/submitMarks",protectRoute, sendStudentMarks);
 
 export default router;

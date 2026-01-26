@@ -1,11 +1,13 @@
 function removeAllSpaces(str) {
-    return str.replace(/\s+/g, "");
-  }
-  
+  return str.replace(/\s+/g, "");
+}
 
 export const securityKeyCheck = (securityKey) => {
-    removeAllSpaces(securityKey)
-    if (securityKey == null || typeof securityKey != "string" || securityKey.length < 6 || securityKey.length>10){
-        return false ;
-    }
-}
+  const cleaned = removeAllSpaces(securityKey);
+  return (
+    securityKey != null &&
+    typeof securityKey === "string" &&
+    cleaned.length >= 6 &&
+    cleaned.length <= 10
+  );
+};
