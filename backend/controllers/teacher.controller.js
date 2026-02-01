@@ -45,7 +45,7 @@ export const sendTeacherMail = async (req, res) => {
       .join("");
 
     const htmlContent = `
-      <h2>Hello ${teacherName},</h2>
+      <h2>Hello ${teacherName} Sir,</h2>
       <p>You have been assigned to evaluate the following students:</p>
       <table style="border-collapse: collapse; width: 100%;">
         <thead>
@@ -59,13 +59,15 @@ export const sendTeacherMail = async (req, res) => {
           ${studentList}
         </tbody>
       </table>
+
       <p>Please login to the dashboard and enter their marks.</p>
+      <p><a href="http://localhost:5173/login">http://localhost:5173/login</a></p>
       <p>Best regards,<br>College Management System</p>
     `;
 
     await sendEmail({
       to: email,
-      subject: `Student Assignment - ${students.length} Students`,
+      subject: `Student assigned - ${students.length} Students`,
       text: `You have been assigned ${students.length} students for evaluation.`,
       html: htmlContent,
     });
@@ -125,11 +127,28 @@ export const sendStudentMarks = async (req, res) => {
         continue;
       }
 
-      if (marks !== undefined && (marks < 0 || marks > 100)) {
-        errors.push(
-          `Invalid marks ${marks} for roll number ${rollNo}. Must be between 0-100`,
-        );
-        continue;
+      // Validate marks array if provided
+      if (marks !== undefined) {
+        if (!Array.isArray(marks)) {
+          errors.push(
+            `Invalid marks format for roll number ${rollNo}. Must be an array of 3 numbers`,
+          );
+          continue;
+        }
+
+        if (marks.length !== 3) {
+          errors.push(
+            `Invalid marks array length for roll number ${rollNo}. Must contain exactly 3 numbers`,
+          );
+          continue;
+        }
+
+        if (marks.some((mark) => mark < 0 || mark > 100)) {
+          errors.push(
+            `Invalid marks values for roll number ${rollNo}. All marks must be between 0-100`,
+          );
+          continue;
+        }
       }
 
       const studentIndex = table.data.findIndex((s) => s.rollNo === rollNo);
@@ -140,7 +159,7 @@ export const sendStudentMarks = async (req, res) => {
 
       if (isAbsent === true) {
         table.data[studentIndex].isAbsent = true;
-        table.data[studentIndex].marks = 0;
+        table.data[studentIndex].marks = [0, 0, 0];
       } else if (marks !== undefined) {
         table.data[studentIndex].marks = marks;
         table.data[studentIndex].isAbsent = false;
@@ -151,8 +170,9 @@ export const sendStudentMarks = async (req, res) => {
 
     await table.save();
 
+    // Check if all students have marks submitted (at least one non-zero mark in array)
     const allMarked = table.data.every(
-      (student) => student.marks > 0 || student.isAbsent,
+      (student) => student.isAbsent || student.marks.some((mark) => mark > 0),
     );
 
     if (allMarked) {

@@ -5,25 +5,32 @@ import { nanoid } from "nanoid";
 //  ! Some of the chages are also needed to be done
 export const handleCreatedNewTable = async (req, res) => {
   try {
-    // const tableId = nanoid(10);
     const { year, branch, data, tableId } = req.body;
     const existingTable = await Table.findOne({ tableId });
     if (existingTable) {
       return res.status(400).json({ message: "This table exist", flag: false });
     }
+
+    // Ensure each student has marks as an array [0, 0, 0]
+    const formattedData = data.map((student) => ({
+      ...student,
+      marks: student.marks || [0, 0, 0],
+      isAbsent: student.isAbsent || false,
+      techerAssignedEmail: student.techerAssignedEmail || "",
+    }));
+
     const createNewTable = await Table.create({
       tableId,
       year,
       branch,
-      data,
+      data: formattedData,
     });
-    return res
-      .status(200)
-      .json({
-        message: "data form has been created",
-        flag: true,
-        createNewTable,
-      });
+
+    return res.status(200).json({
+      message: "data form has been created",
+      flag: true,
+      createNewTable,
+    });
   } catch (error) {
     console.log("Error in createdNewBranch", error);
     return res.status(500).json("Internal server error ");
@@ -35,7 +42,7 @@ export const getTable = async (req, res) => {
 
     // If tableId is provided, fetch specific table
     if (tableId) {
-      const table = await Table.findOne({ tableId })
+      const table = await Table.findOne({ tableId });
 
       if (!table) {
         return res.status(404).json({

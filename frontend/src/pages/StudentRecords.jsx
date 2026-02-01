@@ -176,7 +176,7 @@ const StudentRecords = () => {
             ) : (
               <>
                 {/* Table Header - Desktop */}
-                <div className="hidden lg:grid lg:grid-cols-14 gap-4 mb-4 px-4 bg-blue-50 py-3 rounded-lg">
+                <div className="hidden lg:grid lg:grid-cols-16 gap-4 mb-4 px-4 bg-blue-50 py-3 rounded-lg">
                   <label className="col-span-1 text-sm font-semibold text-blue-700">
                     Roll No
                   </label>
@@ -186,11 +186,17 @@ const StudentRecords = () => {
                   <label className="col-span-2 text-sm font-semibold text-blue-700">
                     Last Name
                   </label>
-                  <label className="col-span-2 text-sm font-semibold text-blue-700">
+                  <label className="col-span-3 text-sm font-semibold text-blue-700">
                     Email
                   </label>
-                  <label className="col-span-2 text-sm font-semibold text-blue-700">
-                    Marks
+                  <label className="col-span-1 text-sm font-semibold text-blue-700">
+                    Marks 1
+                  </label>
+                  <label className="col-span-1 text-sm font-semibold text-blue-700">
+                    Marks 2
+                  </label>
+                  <label className="col-span-1 text-sm font-semibold text-blue-700">
+                    Marks 3
                   </label>
                   <label className="col-span-2 text-sm font-semibold text-blue-700">
                     Teacher
@@ -205,135 +211,177 @@ const StudentRecords = () => {
 
                 {/* Student Rows */}
                 <div className="space-y-4 max-h-[70vh] overflow-y-auto">
-                  {studentData.map((student, index) => (
-                    <div
-                      key={index}
-                      className={`grid grid-cols-1 lg:grid-cols-14 gap-4 items-center p-4 rounded-lg border ${
-                        student.isAbsent
-                          ? "bg-red-50 border-red-200"
-                          : student.marks > 0
-                            ? "bg-green-50 border-green-200"
-                            : "bg-gray-50 border-gray-200"
-                      }`}
-                    >
-                      {/* Roll No */}
-                      <div className="lg:col-span-1 col-span-1">
-                        <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
-                          Roll No
-                        </label>
-                        <p className="text-blue-900 font-medium">
-                          {student.rollNo}
-                        </p>
-                      </div>
+                  {studentData.map((student, index) => {
+                    const marks = Array.isArray(student.marks)
+                      ? student.marks
+                      : [0, 0, 0];
 
-                      {/* First Name */}
-                      <div className="lg:col-span-2 col-span-1">
-                        <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
-                          First Name
-                        </label>
-                        <p className="text-blue-900 font-medium">
-                          {student.firstName}
-                        </p>
-                      </div>
+                    return (
+                      <div
+                        key={index}
+                        className={`grid grid-cols-1 lg:grid-cols-16 gap-4 items-center p-4 rounded-lg border ${
+                          student.isAbsent
+                            ? "bg-red-50 border-red-200"
+                            : marks.some((m) => m > 0)
+                              ? "bg-green-50 border-green-200"
+                              : "bg-gray-50 border-gray-200"
+                        }`}
+                      >
+                        {/* Roll No */}
+                        <div className="lg:col-span-1 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            Roll No
+                          </label>
+                          <p className="text-blue-900 font-medium">
+                            {student.rollNo}
+                          </p>
+                        </div>
 
-                      {/* Last Name */}
-                      <div className="lg:col-span-2 col-span-1">
-                        <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
-                          Last Name
-                        </label>
-                        <p className="text-blue-900 font-medium">
-                          {student.lastName || "-"}
-                        </p>
-                      </div>
+                        {/* First Name */}
+                        <div className="lg:col-span-2 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            First Name
+                          </label>
+                          <p className="text-blue-900 font-medium">
+                            {student.firstName}
+                          </p>
+                        </div>
 
-                      {/* Email */}
-                      <div className="lg:col-span-2 col-span-1">
-                        <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
-                          Email
-                        </label>
-                        <p className="text-blue-900 font-medium text-sm break-all">
-                          {student.email}
-                        </p>
-                      </div>
+                        {/* Last Name */}
+                        <div className="lg:col-span-2 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            Last Name
+                          </label>
+                          <p className="text-blue-900 font-medium">
+                            {student.lastName || "-"}
+                          </p>
+                        </div>
 
-                      {/* Marks */}
-                      <div className="lg:col-span-2 col-span-1">
-                        <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
-                          Marks
-                        </label>
-                        <p
-                          className={`text-lg font-semibold ${
-                            student.isAbsent
-                              ? "text-red-600"
-                              : student.marks > 0
-                                ? "text-green-600"
-                                : "text-gray-600"
-                          }`}
-                        >
-                          {student.isAbsent ? "Absent" : student.marks || "0"}
-                        </p>
-                      </div>
+                        {/* Email */}
+                        <div className="lg:col-span-3 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            Email
+                          </label>
+                          <p className="text-blue-900 font-medium text-sm break-all">
+                            {student.email}
+                          </p>
+                        </div>
 
-                      {/* Teacher Assigned */}
-                      <div className="lg:col-span-2 col-span-1">
-                        <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
-                          Teacher Assigned
-                        </label>
-                        <p className="text-blue-900 font-medium text-sm">
-                          {student.techerAssignedEmail ? (
-                            teacherMap[student.techerAssignedEmail] ||
-                            student.techerAssignedEmail
-                          ) : (
-                            <span className="text-orange-600 italic">
-                              Not Assigned
+                        {/* Marks 1 */}
+                        <div className="lg:col-span-1 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            Marks 1
+                          </label>
+                          <p
+                            className={`text-lg font-semibold ${
+                              student.isAbsent
+                                ? "text-red-600"
+                                : marks[0] > 0
+                                  ? "text-green-600"
+                                  : "text-gray-600"
+                            }`}
+                          >
+                            {student.isAbsent ? "-" : marks[0]}
+                          </p>
+                        </div>
+
+                        {/* Marks 2 */}
+                        <div className="lg:col-span-1 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            Marks 2
+                          </label>
+                          <p
+                            className={`text-lg font-semibold ${
+                              student.isAbsent
+                                ? "text-red-600"
+                                : marks[1] > 0
+                                  ? "text-green-600"
+                                  : "text-gray-600"
+                            }`}
+                          >
+                            {student.isAbsent ? "-" : marks[1]}
+                          </p>
+                        </div>
+
+                        {/* Marks 3 */}
+                        <div className="lg:col-span-1 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            Marks 3
+                          </label>
+                          <p
+                            className={`text-lg font-semibold ${
+                              student.isAbsent
+                                ? "text-red-600"
+                                : marks[2] > 0
+                                  ? "text-green-600"
+                                  : "text-gray-600"
+                            }`}
+                          >
+                            {student.isAbsent ? "-" : marks[2]}
+                          </p>
+                        </div>
+
+                        {/* Teacher Assigned */}
+                        <div className="lg:col-span-2 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            Teacher Assigned
+                          </label>
+                          <p className="text-blue-900 font-medium text-sm">
+                            {student.techerAssignedEmail ? (
+                              teacherMap[student.techerAssignedEmail] ||
+                              student.techerAssignedEmail
+                            ) : (
+                              <span className="text-orange-600 italic">
+                                Not Assigned
+                              </span>
+                            )}
+                          </p>
+                        </div>
+
+                        {/* Status */}
+                        <div className="lg:col-span-2 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            Status
+                          </label>
+                          <div className="flex items-center">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                student.isAbsent
+                                  ? "bg-red-200 text-red-800"
+                                  : marks.some((m) => m > 0)
+                                    ? "bg-green-200 text-green-800"
+                                    : "bg-yellow-200 text-yellow-800"
+                              }`}
+                            >
+                              {student.isAbsent
+                                ? "Absent"
+                                : marks.some((m) => m > 0)
+                                  ? "Submitted"
+                                  : "Pending"}
                             </span>
-                          )}
-                        </p>
-                      </div>
+                          </div>
+                        </div>
 
-                      {/* Status */}
-                      <div className="lg:col-span-2 col-span-1">
-                        <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
-                          Status
-                        </label>
-                        <div className="flex items-center">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              student.isAbsent
-                                ? "bg-red-200 text-red-800"
-                                : student.marks > 0
-                                  ? "bg-green-200 text-green-800"
-                                  : "bg-yellow-200 text-yellow-800"
-                            }`}
-                          >
-                            {student.isAbsent
-                              ? "Absent"
-                              : student.marks > 0
-                                ? "Submitted"
-                                : "Pending"}
-                          </span>
+                        {/* Absent */}
+                        <div className="lg:col-span-1 col-span-1">
+                          <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
+                            Absent
+                          </label>
+                          <div className="flex items-center">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                student.isAbsent
+                                  ? "bg-red-200 text-red-800"
+                                  : "bg-green-200 text-green-800"
+                              }`}
+                            >
+                              {student.isAbsent ? "Yes" : "No"}
+                            </span>
+                          </div>
                         </div>
                       </div>
-
-                      {/* Absent */}
-                      <div className="lg:col-span-1 col-span-1">
-                        <label className="lg:hidden text-sm font-semibold text-blue-700 block mb-1">
-                          Absent
-                        </label>
-                        <div className="flex items-center">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              student.isAbsent
-                                ? "bg-red-200 text-red-800"
-                                : "bg-green-200 text-green-800"
-                            }`}
-                          >
-                            {student.isAbsent ? "Yes" : "No"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Summary */}
@@ -351,7 +399,13 @@ const StudentRecords = () => {
                       Submitted
                     </p>
                     <p className="text-2xl font-bold text-green-700 mt-2">
-                      {studentData.filter((s) => s.marks > 0).length}
+                      {
+                        studentData.filter(
+                          (s) =>
+                            Array.isArray(s.marks) &&
+                            s.marks.some((m) => m > 0),
+                        ).length
+                      }
                     </p>
                   </div>
                   <div className="bg-red-50 p-4 rounded-lg border border-red-200">
@@ -366,8 +420,12 @@ const StudentRecords = () => {
                     </p>
                     <p className="text-2xl font-bold text-yellow-700 mt-2">
                       {
-                        studentData.filter((s) => s.marks === 0 && !s.isAbsent)
-                          .length
+                        studentData.filter(
+                          (s) =>
+                            (!Array.isArray(s.marks) ||
+                              s.marks.every((m) => m === 0)) &&
+                            !s.isAbsent,
+                        ).length
                       }
                     </p>
                   </div>

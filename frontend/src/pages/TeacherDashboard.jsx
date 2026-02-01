@@ -10,42 +10,60 @@ const TeacherDashboard = () => {
   const [studentRecords, setStudentRecords] = useState([]);
   const [initialRecords, setInitialRecords] = useState([]);
   const [editingId, setEditingId] = useState(null);
-  const [editMarks, setEditMarks] = useState("");
+  const [editMarks, setEditMarks] = useState(["", "", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showRecords, setShowRecords] = useState(false);
   const [teacherEmail, setTeacherEmail] = useState("");
 
-  // Get teacher email from localStorage or auth context
   useEffect(() => {
     const email = localStorage.getItem("userEmail");
     setTeacherEmail(email);
   }, []);
 
-  // Calculate stats
+  const hasMarks = (marks) => Array.isArray(marks) && marks.some((m) => m > 0);
+
   const submitted = studentRecords.filter(
-    (s) => s.marks > 0 || s.isAbsent,
+    (s) => s.isAbsent || hasMarks(s.marks),
   ).length;
+
   const pending = studentRecords.filter(
-    (s) => s.marks === 0 && !s.isAbsent,
+    (s) => !s.isAbsent && !hasMarks(s.marks),
   ).length;
+
   const total = studentRecords.length;
+
   const averageScore =
-    submitted > 0
+    studentRecords.filter((s) => !s.isAbsent).length > 0
       ? (
           studentRecords.reduce(
-            (sum, s) => sum + (s.isAbsent ? 0 : s.marks),
+            (sum, s) =>
+              sum +
+              (s.isAbsent
+                ? 0
+                : Array.isArray(s.marks)
+                  ? s.marks.reduce((a, b) => a + b, 0) / 3
+                  : 0),
             0,
           ) / studentRecords.filter((s) => !s.isAbsent).length
         ).toFixed(2)
       : 0;
 
-  const handleMarksChange = (rollNo, value) => {
-    const numValue = parseInt(value) || 0;
+  const handleMarksChange = (rollNo, index, value) => {
+    const numValue = parseInt(value, 10);
+    const safeValue = Number.isNaN(numValue) ? 0 : numValue;
+
     setStudentRecords((prev) =>
       prev.map((student) =>
         student.rollNo === rollNo
-          ? { ...student, marks: student.isAbsent ? 0 : numValue }
+          ? {
+              ...student,
+              marks: student.isAbsent
+                ? [0, 0, 0]
+                : (student.marks || [0, 0, 0]).map((m, i) =>
+                    i === index ? safeValue : m,
+                  ),
+            }
           : student,
       ),
     );
@@ -55,7 +73,11 @@ const TeacherDashboard = () => {
     setStudentRecords((prev) =>
       prev.map((student) =>
         student.rollNo === rollNo
-          ? { ...student, isAbsent, marks: isAbsent ? 0 : student.marks }
+          ? {
+              ...student,
+              isAbsent,
+              marks: isAbsent ? [0, 0, 0] : student.marks || [0, 0, 0],
+            }
           : student,
       ),
     );
@@ -63,13 +85,21 @@ const TeacherDashboard = () => {
 
   const handleEditClick = (rollNo, marks) => {
     setEditingId(rollNo);
-    setEditMarks(marks.toString());
+    const safeMarks = Array.isArray(marks) ? marks : [0, 0, 0];
+    setEditMarks(safeMarks.map((m) => m.toString()));
   };
 
   const handleEditSave = () => {
-    handleMarksChange(editingId, editMarks);
+    const parsed = editMarks.map((m) => parseInt(m, 10) || 0);
+    setStudentRecords((prev) =>
+      prev.map((student) =>
+        student.rollNo === editingId
+          ? { ...student, marks: student.isAbsent ? [0, 0, 0] : parsed }
+          : student,
+      ),
+    );
     setEditingId(null);
-    setEditMarks("");
+    setEditMarks(["", "", ""]);
   };
 
   const handleShowRecords = async () => {
@@ -88,7 +118,6 @@ const TeacherDashboard = () => {
       const tableId = `${academicYear} ${branch}`;
       const res = await API.post("/table/getTable", { tableId });
       if (res.data.flag) {
-        // Filter students assigned to logged-in teacher
         const allStudents = res.data.data.data || [];
         const assignedStudents = allStudents.filter(
           (student) => student.techerAssignedEmail === teacherEmail,
@@ -101,8 +130,14 @@ const TeacherDashboard = () => {
           return;
         }
 
-        setStudentRecords(assignedStudents);
-        setInitialRecords(assignedStudents);
+        // Ensure marks arrays exist
+        const normalized = assignedStudents.map((s) => ({
+          ...s,
+          marks: Array.isArray(s.marks) ? s.marks : [0, 0, 0],
+        }));
+
+        setStudentRecords(normalized);
+        setInitialRecords(normalized);
         setShowRecords(true);
       } else {
         setError(res.data.message || "Failed to fetch records");
@@ -124,7 +159,7 @@ const TeacherDashboard = () => {
       const initial = initialRecords.find((s) => s.rollNo === student.rollNo);
       return (
         !initial ||
-        initial.marks !== student.marks ||
+        JSON.stringify(initial.marks) !== JSON.stringify(student.marks) ||
         initial.isAbsent !== student.isAbsent
       );
     });
@@ -289,157 +324,250 @@ const TeacherDashboard = () => {
                 Your Assigned Students
               </h2>
 
-              {/* Table Header */}
-              <div className="hidden md:grid grid-cols-12 gap-4 mb-4 px-4 bg-blue-50 py-3 rounded-lg">
-                <label className="col-span-1 text-sm font-semibold text-blue-700">
+              <div className="hidden md:grid grid-cols-16 gap-3 mb-4 px-4 bg-blue-50 py-3 rounded-lg text-xs">
+                <label className="col-span-2 font-semibold text-blue-700">
                   Roll No
                 </label>
-                <label className="col-span-3 text-sm font-semibold text-blue-700">
+                <label className="col-span-3 font-semibold text-blue-700">
                   Name
                 </label>
-                <label className="col-span-2 text-sm font-semibold text-blue-700">
-                  Marks
+                <label className="col-span-1 font-semibold text-blue-700">
+                  M1
                 </label>
-                <label className="col-span-2 text-sm font-semibold text-blue-700">
+                <label className="col-span-1 font-semibold text-blue-700">
+                  M2
+                </label>
+                <label className="col-span-1 font-semibold text-blue-700">
+                  M3
+                </label>
+                <label className="col-span-2 font-semibold text-blue-700">
                   Absent
                 </label>
-                <label className="col-span-2 text-sm font-semibold text-blue-700">
-                  Action
+                <label className="col-span-3 font-semibold text-blue-700">
+                  Edit
                 </label>
-                <label className="col-span-2"></label>
+                <label className="col-span-3 font-semibold text-blue-700">
+                  Reset
+                </label>
               </div>
 
-              {/* Student Rows */}
               <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                {studentRecords.map((student) => (
-                  <div
-                    key={student.rollNo}
-                    className={`grid grid-cols-1 md:grid-cols-12 gap-4 items-center p-4 rounded-lg border ${
-                      student.isAbsent
-                        ? "bg-red-50 border-red-200"
-                        : student.marks > 0
-                          ? "bg-green-50 border-green-200"
-                          : "bg-gray-50 border-gray-200"
-                    }`}
-                  >
-                    {/* Roll No */}
-                    <div className="md:col-span-1 col-span-1">
-                      <label className="md:hidden text-sm font-semibold text-blue-700">
-                        Roll No
-                      </label>
-                      <p className="text-blue-900 font-medium">
-                        {student.rollNo}
-                      </p>
-                    </div>
+                {studentRecords.map((student) => {
+                  const marks = Array.isArray(student.marks)
+                    ? student.marks
+                    : [0, 0, 0];
 
-                    {/* Name */}
-                    <div className="md:col-span-3 col-span-1">
-                      <label className="md:hidden text-sm font-semibold text-blue-700">
-                        Name
-                      </label>
-                      <p className="text-blue-900 font-medium">
-                        {student.firstName} {student.lastName}
-                      </p>
-                    </div>
-
-                    {/* Marks */}
-                    <div className="md:col-span-2 col-span-1">
-                      <label className="md:hidden text-sm font-semibold text-blue-700">
-                        Marks
-                      </label>
-                      {editingId === student.rollNo ? (
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={editMarks}
-                          onChange={(e) => setEditMarks(e.target.value)}
-                          disabled={
-                            studentRecords.find(
-                              (s) => s.rollNo === student.rollNo,
-                            )?.isAbsent
-                          }
-                          className="w-full rounded-lg border border-blue-300 bg-white px-3 py-2 text-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        />
-                      ) : (
-                        <p
-                          className={`text-lg font-semibold ${
-                            student.isAbsent
-                              ? "text-red-600"
-                              : student.marks > 0
-                                ? "text-green-600"
-                                : "text-gray-600"
-                          }`}
-                        >
-                          {student.isAbsent ? "Absent" : student.marks || "-"}
+                  return (
+                    <div
+                      key={student.rollNo}
+                      className={`grid grid-cols-1 md:grid-cols-16 gap-3 items-center p-4 rounded-lg border ${
+                        student.isAbsent
+                          ? "bg-red-50 border-red-200"
+                          : hasMarks(student.marks)
+                            ? "bg-green-50 border-green-200"
+                            : "bg-gray-50 border-gray-200"
+                      }`}
+                    >
+                      {/* Roll No */}
+                      <div className="md:col-span-2 col-span-1">
+                        <label className="md:hidden text-xs font-semibold text-blue-700">
+                          Roll No
+                        </label>
+                        <p className="text-blue-900 font-medium text-sm">
+                          {student.rollNo}
                         </p>
-                      )}
-                    </div>
+                      </div>
 
-                    {/* Is Absent Checkbox */}
-                    <div className="md:col-span-2 col-span-1 flex items-center">
-                      <label className="md:hidden text-sm font-semibold text-blue-700 mr-2">
-                        Absent
-                      </label>
-                      <input
-                        type="checkbox"
-                        checked={student.isAbsent}
-                        onChange={(e) =>
-                          handleIsAbsentChange(student.rollNo, e.target.checked)
-                        }
-                        className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-400 cursor-pointer"
-                      />
-                    </div>
+                      {/* Name */}
+                      <div className="md:col-span-3 col-span-1">
+                        <label className="md:hidden text-xs font-semibold text-blue-700">
+                          Name
+                        </label>
+                        <p className="text-blue-900 font-medium text-sm">
+                          {student.firstName} {student.lastName}
+                        </p>
+                      </div>
 
-                    {/* Edit Button */}
-                    <div className="md:col-span-2 col-span-1">
-                      {editingId === student.rollNo ? (
-                        <button
-                          onClick={handleEditSave}
-                          className="w-full bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-                        >
-                          Save
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() =>
-                            handleEditClick(student.rollNo, student.marks)
+                      {/* Marks 1 */}
+                      <div className="md:col-span-1 col-span-1">
+                        <label className="md:hidden text-xs font-semibold text-blue-700">
+                          Marks 1
+                        </label>
+                        {editingId === student.rollNo ? (
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={editMarks[0]}
+                            onChange={(e) => {
+                              const updated = [...editMarks];
+                              updated[0] = e.target.value;
+                              setEditMarks(updated);
+                            }}
+                            disabled={student.isAbsent}
+                            className="w-full rounded-lg border border-blue-300 bg-white px-2 py-1 text-blue-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          />
+                        ) : (
+                          <p
+                            className={`text-base font-semibold ${
+                              student.isAbsent
+                                ? "text-red-600"
+                                : marks[0] > 0
+                                  ? "text-green-600"
+                                  : "text-gray-600"
+                            }`}
+                          >
+                            {student.isAbsent ? "-" : marks[0]}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Marks 2 */}
+                      <div className="md:col-span-1 col-span-1">
+                        <label className="md:hidden text-xs font-semibold text-blue-700">
+                          Marks 2
+                        </label>
+                        {editingId === student.rollNo ? (
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={editMarks[1]}
+                            onChange={(e) => {
+                              const updated = [...editMarks];
+                              updated[1] = e.target.value;
+                              setEditMarks(updated);
+                            }}
+                            disabled={student.isAbsent}
+                            className="w-full rounded-lg border border-blue-300 bg-white px-2 py-1 text-blue-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          />
+                        ) : (
+                          <p
+                            className={`text-base font-semibold ${
+                              student.isAbsent
+                                ? "text-red-600"
+                                : marks[1] > 0
+                                  ? "text-green-600"
+                                  : "text-gray-600"
+                            }`}
+                          >
+                            {student.isAbsent ? "-" : marks[1]}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Marks 3 */}
+                      <div className="md:col-span-1 col-span-1">
+                        <label className="md:hidden text-xs font-semibold text-blue-700">
+                          Marks 3
+                        </label>
+                        {editingId === student.rollNo ? (
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={editMarks[2]}
+                            onChange={(e) => {
+                              const updated = [...editMarks];
+                              updated[2] = e.target.value;
+                              setEditMarks(updated);
+                            }}
+                            disabled={student.isAbsent}
+                            className="w-full rounded-lg border border-blue-300 bg-white px-2 py-1 text-blue-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          />
+                        ) : (
+                          <p
+                            className={`text-base font-semibold ${
+                              student.isAbsent
+                                ? "text-red-600"
+                                : marks[2] > 0
+                                  ? "text-green-600"
+                                  : "text-gray-600"
+                            }`}
+                          >
+                            {student.isAbsent ? "-" : marks[2]}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Absent */}
+                      <div className="md:col-span-2 col-span-1 flex items-center">
+                        <label className="md:hidden text-xs font-semibold text-blue-700 mr-2">
+                          Absent
+                        </label>
+                        <input
+                          type="checkbox"
+                          checked={student.isAbsent}
+                          onChange={(e) =>
+                            handleIsAbsentChange(
+                              student.rollNo,
+                              e.target.checked,
+                            )
                           }
-                          disabled={student.isAbsent}
-                          className="w-full bg-orange-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <i className="fas fa-edit"></i>
-                          Edit
-                        </button>
-                      )}
-                    </div>
+                          className="w-4 h-4 text-red-600 rounded focus:ring-2 focus:ring-red-400 cursor-pointer"
+                        />
+                      </div>
 
-                    {/* Delete/Cancel Button */}
-                    <div className="md:col-span-2 col-span-1">
-                      {editingId === student.rollNo ? (
+                      {/* Edit Actions */}
+                      <div className="md:col-span-3 col-span-1">
+                        <label className="md:hidden text-xs font-semibold text-blue-700 block mb-1">
+                          Edit
+                        </label>
+                        {editingId === student.rollNo ? (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={handleEditSave}
+                              title="Save"
+                              className="flex-1 bg-blue-600 text-white font-semibold p-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                            >
+                              <i className="fas fa-check text-sm"></i>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingId(null);
+                                setEditMarks(["", "", ""]);
+                              }}
+                              title="Cancel"
+                              className="flex-1 bg-gray-400 text-white font-semibold p-2 rounded-lg hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                            >
+                              <i className="fas fa-times text-sm"></i>
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              handleEditClick(student.rollNo, student.marks)
+                            }
+                            disabled={student.isAbsent}
+                            title="Edit"
+                            className="w-full bg-orange-500 text-white font-semibold p-2 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <i className="fas fa-edit text-sm"></i>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Reset */}
+                      <div className="md:col-span-3 col-span-1">
+                        <label className="md:hidden text-xs font-semibold text-blue-700 block mb-1">
+                          Reset
+                        </label>
                         <button
                           onClick={() => {
-                            setEditingId(null);
-                            setEditMarks("");
+                            handleMarksChange(student.rollNo, 0, 0);
+                            handleMarksChange(student.rollNo, 1, 0);
+                            handleMarksChange(student.rollNo, 2, 0);
+                            handleIsAbsentChange(student.rollNo, false);
                           }}
-                          className="w-full bg-gray-400 text-white font-semibold py-2 px-3 rounded-lg hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                          title="Reset"
+                          className="w-full bg-red-500 text-white font-semibold p-2 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 transition"
                         >
-                          Cancel
+                          <i className="fas fa-redo text-sm"></i>
                         </button>
-                      ) : (
-                        <button
-                          onClick={() =>
-                            handleMarksChange(student.rollNo, 0) &&
-                            handleIsAbsentChange(student.rollNo, false)
-                          }
-                          className="w-full bg-red-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-400 transition flex items-center justify-center gap-2"
-                        >
-                          <i className="fas fa-redo"></i>
-                        </button>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Action Buttons */}

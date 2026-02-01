@@ -93,11 +93,10 @@ const NewStudents = () => {
         tableId: academicYear + " " + branch,
         year: academicYear,
         branch: branch,
-        // totalStudents: students.length,
         data: students.map((student) => ({
           ...student,
           rollNo: student.rollNo,
-          marks: 0,
+          marks: [0, 0, 0],
           isAbsent: false,
           techerAssignedEmail: "",
         })),
