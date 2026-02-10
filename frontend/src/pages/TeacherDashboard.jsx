@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "@fortawesome/fontawesome-free/css/all.min.css";
+import jsPDF from "jspdf";
+import { autoTable } from "jspdf-autotable";
 import API from "../utils/axios";
 import academicYears from "../json/academicYears.json";
 import branches from "../json/branches.json";
@@ -22,6 +24,12 @@ const TeacherDashboard = () => {
   }, []);
 
   const hasMarks = (marks) => Array.isArray(marks) && marks.some((m) => m > 0);
+
+  const isComplete = (student) => student.isAbsent || hasMarks(student.marks);
+
+  const visibleRecords = studentRecords.filter((s) => !isComplete(s));
+  const allComplete =
+    studentRecords.length > 0 && studentRecords.every(isComplete);
 
   const submitted = studentRecords.filter(
     (s) => s.isAbsent || hasMarks(s.marks),
@@ -81,6 +89,30 @@ const TeacherDashboard = () => {
           : student,
       ),
     );
+  };
+
+  const handleDownloadPdf = () => {
+    if (!allComplete) {
+      alert("Download available only when all students are complete.");
+      return;
+    }
+    const doc = new jsPDF();
+    doc.text(`Records: ${academicYear} - ${branch}`, 14, 16);
+
+    const rows = studentRecords.map((s) => [
+      s.rollNo,
+      `${s.firstName} ${s.lastName || ""}`.trim(),
+      Array.isArray(s.marks) ? s.marks.join(", ") : "0, 0, 0",
+      s.isAbsent ? "Yes" : "No",
+    ]);
+
+    autoTable(doc, {
+      startY: 22,
+      head: [["Roll No", "Name", "Marks", "Absent"]],
+      body: rows,
+    });
+
+    doc.save(`records_${academicYear}_${branch}.pdf`);
   };
 
   const handleEditClick = (rollNo, marks) => {
@@ -352,7 +384,7 @@ const TeacherDashboard = () => {
               </div>
 
               <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                {studentRecords.map((student) => {
+                {visibleRecords.map((student) => {
                   const marks = Array.isArray(student.marks)
                     ? student.marks
                     : [0, 0, 0];
@@ -572,6 +604,13 @@ const TeacherDashboard = () => {
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-4 mt-8">
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={!allComplete}
+                  className="bg-purple-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Download PDF
+                </button>
                 <button
                   onClick={handleSubmit}
                   disabled={loading || studentRecords.length === 0}

@@ -3,6 +3,8 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import API from "../utils/axios";
 import academicYears from "../json/academicYears.json";
 import branches from "../json/branches.json";
+import jsPDF from "jspdf";
+import { autoTable } from "jspdf-autotable";
 
 const StudentRecords = () => {
   const [academicYear, setAcademicYear] = useState("");
@@ -63,6 +65,35 @@ const StudentRecords = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const hasMarks = (marks) => Array.isArray(marks) && marks.some((m) => m > 0);
+  const isComplete = (student) => student.isAbsent || hasMarks(student.marks);
+  const allComplete = studentData.length > 0 && studentData.every(isComplete);
+
+  const handleDownloadPdf = () => {
+    if (!allComplete) {
+      alert("Download available only when all students are complete.");
+      return;
+    }
+
+    const doc = new jsPDF();
+    doc.text(`Records: ${academicYear} - ${branch}`, 14, 16);
+
+    const rows = studentData.map((s) => [
+      s.rollNo,
+      `${s.firstName} ${s.lastName || ""}`.trim(),
+      Array.isArray(s.marks) ? s.marks.join(", ") : "0, 0, 0",
+      s.isAbsent ? "Yes" : "No",
+    ]);
+
+    autoTable(doc, {
+      startY: 22,
+      head: [["Roll No", "Name", "Marks", "Absent"]],
+      body: rows,
+    });
+
+    doc.save(`records_${academicYear}_${branch}.pdf`);
   };
 
   return (
@@ -443,6 +474,16 @@ const StudentRecords = () => {
                       }
                     </p>
                   </div>
+                </div>
+
+                <div className="flex justify-end gap-4 mt-8">
+                  <button
+                    onClick={handleDownloadPdf}
+                    disabled={!allComplete}
+                    className="bg-purple-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Download PDF
+                  </button>
                 </div>
               </>
             )}
