@@ -70,9 +70,9 @@ export const handleLogin = async (req, res) => {
 
     const token = generateToken(existingUser.id);
     res.cookie("token", token, {
-      // httpOnly: true,       // JS cannot access cookie
-      // secure: true,         // HTTPS only (true in production)
-      // sameSite: "strict",   // CSRF protection
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
