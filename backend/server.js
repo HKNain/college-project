@@ -16,7 +16,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://college-project-1-79dm.onrender.com",
+    origin: "https://college-project-murex-three.vercel.app",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
