@@ -7,7 +7,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
       {
         sender: {
           name: "Student Marks",
-          email: process.env.SMTP_SENDER || process.env.SMTP_USER,
+          email: process.env.EMAIL_USER
         },
         to: Array.isArray(to)
           ? to.map((email) => ({ email }))
