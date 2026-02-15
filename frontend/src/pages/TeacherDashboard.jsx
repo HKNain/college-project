@@ -363,14 +363,14 @@ const TeacherDashboard = () => {
                 <label className="col-span-3 font-semibold text-blue-700">
                   Name
                 </label>
-                <label className="col-span-1 font-semibold text-blue-700">
-                  M1
+                <label className="col-span-1 font-semibold text-blue-700 ">
+                  Viva
                 </label>
                 <label className="col-span-1 font-semibold text-blue-700">
-                  M2
+                  Presentation
                 </label>
                 <label className="col-span-1 font-semibold text-blue-700">
-                  M3
+                  Idea
                 </label>
                 <label className="col-span-2 font-semibold text-blue-700">
                   Absent
