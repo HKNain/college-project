@@ -62,12 +62,12 @@ export const sendTeacherMail = async (req, res) => {
 
       <p>Please login to the dashboard and enter their marks.</p>
       <p><a href="https://college-project-murex-three.vercel.app/admin/dashboard">https://college-project-murex-three.vercel.app/login</a></p>
-      <p>Best regards,<br>College Management System</p>
+      <p>Best regards,<br>IIIT Sonepat Marks Management System</p>
     `;
 
     await sendEmail({
       to: email,
-      subject: `Student assigned - ${students.length} Students`,
+      subject: `Minor Project Evaluation`,
       text: `You have been assigned ${students.length} students for evaluation.`,
       html: htmlContent,
     });
