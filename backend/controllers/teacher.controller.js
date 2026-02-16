@@ -61,7 +61,7 @@ export const sendTeacherMail = async (req, res) => {
       </table>
 
       <p>Please login to the dashboard and enter their marks.</p>
-      <p><a href="http://localhost:5173/login">http://localhost:5173/login</a></p>
+      <p><a href="https://college-project-murex-three.vercel.app/admin/dashboard">https://college-project-murex-three.vercel.app/login</a></p>
       <p>Best regards,<br>College Management System</p>
     `;
 
